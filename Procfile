@@ -1,1 +1,1 @@
-web: gunicorn chess-app-flask.wsgi
+web: gunicorn chessappflask.wsgi
