@@ -1,0 +1,12 @@
+<!doctype html>
+<html>
+<head><title>Database Results</title></head>
+<body>
+    <h1>Database Results</h1>
+    <ul>
+        {% for result in results %}
+            <li>{{ result.name }}: {{ result.value }}</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
