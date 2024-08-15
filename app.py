@@ -19,5 +19,9 @@ class Player(db.Model):
 def index():
     results = Player.query.all()
     return render_template('index.html', results=results)
-    secret_key = app.config.get("SECRET_KEY")
-    return f"The configured secret key is {secret_key}. TEST TEST TEST aaaa"
+
+
+@app.route("/error/")
+def error():
+    raise Exception("This is a new, updated error!")
+
