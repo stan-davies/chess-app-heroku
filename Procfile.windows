@@ -1,1 +1,1 @@
-web: python app.py runserver %PORT%
+web: python -m flask run --port=5001
