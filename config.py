@@ -2,9 +2,8 @@ import os
 
 
 class Config:
-    DEBUG = False
+    DEBUG = True
     DEVELOPMENT = False
-    SECRET_KEY = os.getenv("SECRET_KEY", "this-is-the-default-key")
 
 
 class ProductionConfig(Config):

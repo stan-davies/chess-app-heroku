@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import desc
-import pys.models as MODELS
+import models as MODELS
 import json
 import app as App
 
