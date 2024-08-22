@@ -49,7 +49,7 @@ def index():
                 colour = None;
 
             url = game.id
-            return redirect(url_for("enter_game") + f"{url}/?u={username}&c={colour}")
+            return redirect(url_for("index") + f"{url}/?u={username}&c={colour}")
         else:
             new_board = json.dumps([
                 "wR", "wN", "wB", "wQ", "wK", "wB", "wN", "wR",
@@ -82,7 +82,7 @@ def index():
             App.db.session.commit()
 
             url = new_game.id
-            return redirect(url_for("enter_game") + f"{url}/?u={username}&c=1")
+            return redirect(url_for("index") + f"{url}/?u={username}&c=1")
 
 @App.app.route("/game/<string:game_id>/", methods=["GET", "POST"])
 def game(game_id):
@@ -345,3 +345,22 @@ def add_account():
     App.db.session.commit()
 
     return redirect(url_for("index"))
+
+
+@App.app.route("/resign/", methods=["POST"])
+def resign():
+    gameID = request.form["id"]
+    losing_colour = int(request.form["col"])
+
+    winner = ["black", "white"][losing_colour]
+
+    game = (
+        App.db.session.query(MODELS.Game)
+        .filter(MODELS.Game.id==gameID)
+        .first()
+    )
+
+    game.status = f"{winner} has won"
+    App.db.session.commit()
+
+    return game.status
