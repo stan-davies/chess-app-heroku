@@ -235,6 +235,7 @@ def poll():
     return json.dumps(data)
 
 
+# merge the following two functions
 @App.app.route("/getCurrentBoard/", methods=["POST"])
 def getCurrentBoard():
     game_id = request.form["gameID"]
@@ -250,6 +251,29 @@ def getCurrentBoard():
     data = json.dumps(board)
 
     return data
+
+
+@App.app.route("/getPastBoard/", methods=["POST"])
+def getPastBoard():
+    gameID = request.form["gameID"]
+    offset = int(request.form["offset"])
+
+    # if offset is the length of the gamemoves then return a default board
+    # and don't store anything in db
+
+    game_states = (
+        App.db.session.query(MODELS.StateHistory)
+        .filter(MODELS.StateHistory.gameID==gameID)
+        .order_by(MODELS.StateHistory.movenum)
+        .all()
+    )
+
+    if len(game_states) < offset:
+        offset = 0
+
+    state_row = game_states[len(game_states) - (offset + 1)]
+
+    return state_row.state;
 
 
 @App.app.route("/castle/", methods=["POST"])
