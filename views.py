@@ -117,9 +117,9 @@ def submitMove():
     piece = request.form["piece"]
 
     last_move = (
-        App.db.session.query(MODELS.TestMove)
-        .filter(MODELS.TestMove.gameID==gameID)
-        .order_by(-MODELS.TestMove.id)
+        App.db.session.query(MODELS.Move)
+        .filter(MODELS.Move.gameID==gameID)
+        .order_by(-MODELS.Move.id)
         .first()
     )
 
@@ -129,7 +129,7 @@ def submitMove():
     else:
         colour = move_num = 1
 
-    move = MODELS.TestMove(colour=colour, piece=piece, p_from=move_from, p_to=move_to, gameID=gameID, gamemove=move_num)
+    move = MODELS.Move(colour=colour, piece=piece, p_from=move_from, p_to=move_to, gameID=gameID, gamemove=move_num)
     App.db.session.add(move)
     App.db.session.commit()
 
@@ -334,3 +334,14 @@ def castle():
 
     # lol i forgot about this
     return "okay"
+
+
+@App.app.route("/add_account/", methods=["POST"])
+def add_account():
+    new_account_name = request.form["account-name"]
+
+    new_account = MODELS.Player(name=new_account_name)
+    App.db.session.add(new_account)
+    App.db.session.commit()
+
+    return redirect(url_for("index"))
