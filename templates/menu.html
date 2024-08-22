@@ -16,7 +16,7 @@
     </head>
     <body>
         <div class="vs">
-            <form class="join-game" action="{{ url_for('enter_game') }}" method="POST">
+            <form class="join-game" action="{{ url_for('index') }}" method="POST">
                 <input type="hidden" name="enter-type" value="join">
 
                 <label for="choose-player">select your player</label>
@@ -37,7 +37,7 @@
 
                 <button class="submit">submit</button>
             </form>
-            <form class="make-game" action="{{ url_for('enter_game') }}" method="POST">
+            <form class="make-game" action="{{ url_for('index') }}" method="POST">
                 <input type="hidden" name="enter-type" value="create">
                 <input type="hidden" name="game-type" value="vs">
 
