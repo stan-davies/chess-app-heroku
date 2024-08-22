@@ -555,11 +555,9 @@ $( document ).ready(function() {
         };
 
         var piece = currentStart.dataset.piece;
-        var from = currentStart.id;
-        var to = currentEnd.id;
 
         // checks that move is legal
-        check = legalCheck(piece, currentStart, currentEnd, currentEnd.dataset.piece);
+        let check = legalCheck(piece, currentStart, currentEnd, currentEnd.dataset.piece);
         if (check === false) {
             currentStart.style.opacity = "1";
             alert("not a legal move");
@@ -854,8 +852,6 @@ $( document ).ready(function() {
                 movesLength = moves.length;
             };
 
-            nextPlayerCol = nextPlay[0] == 1 ? "white" : "black";
-
             document.plyCounter = moves.length;
 
             // put this data in a global array so that we can have a look at it in castlingCheck if we need to, this can be used for en passant too
@@ -951,8 +947,8 @@ $( document ).ready(function() {
 
     console.log(document.game_status);
     if (document.game_status != "test") {
-        var interval = setInterval(poll, 5000);
+        var interval = setInterval(poll, 1000);
     } else {
-        var interval = setInterval(getGameState, 5000);
+        var interval = setInterval(getGameState, 1000);
     };
 });

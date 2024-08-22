@@ -111,7 +111,7 @@ def submitMove():
     last_move = (
         App.db.session.query(MODELS.Move)
         .filter(MODELS.Move.gameid==gameid)
-        .order_by(-MODELS.Move.gamemove)
+        .order_by(-MODELS.Move.id)
         .first()
     )
 
