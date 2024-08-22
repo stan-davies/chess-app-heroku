@@ -200,8 +200,8 @@ def poll():
     )
 
     moves = (
-        App.db.session.query(MODELS.TestMove)
-        .filter(MODELS.TestMove.gameID==game_id)
+        App.db.session.query(MODELS.Move)
+        .filter(MODELS.Move.gameID==game_id)
         .all()
     )
 
@@ -250,3 +250,87 @@ def getCurrentBoard():
     data = json.dumps(board)
 
     return data
+
+
+@App.app.route("/castle/", methods=["POST"])
+def castle():
+    game_id = request.form["game-id"]
+    colour = request.form["colour"]
+    side = request.form["side"]
+
+    game = (
+        App.db.session.query(MODELS.Game)
+        .filter(MODELS.Game.id==game_id)
+        .first()
+    )
+
+    gameboard = json.loads(game.currentBoard)
+
+    if colour == "w" and side == "kingside":
+        gameboard[7] = ""
+        gameboard[5] = "wR"
+        gameboard[4] = ""
+        gameboard[6] = "wK"
+
+        move_from = "e1"
+        move_to = "g1"
+    elif colour == "w" and side == "queenside":
+        gameboard[0] = ""
+        gameboard[3] = "wR"
+        gameboard[4] = ""
+        gameboard[2] = "wK"
+
+        move_from = "e1"
+        move_to = "c1"
+    elif colour == "b" and side == "kingside":
+        gameboard[63] = ""
+        gameboard[61] = "bR"
+        gameboard[60] = ""
+        gameboard[62] = "bK"
+
+        move_from = "e8"
+        move_to = "g8"
+    elif colour == "b" and side == "queenside":
+        gameboard[56] = ""
+        gameboard[59] = "bR"
+        gameboard[60] = ""
+        gameboard[58] = "bK"
+
+        move_from = "e8"
+        move_to = "c8"
+
+
+    jsonBoard = json.dumps(gameboard)
+    game.currentBoard = jsonBoard
+    App.db.session.commit()
+
+    last_move = (
+        App.db.session.query(MODELS.Move)
+        .filter(MODELS.Move.gameID==game_id)
+        .order_by(-MODELS.Move.id)
+        .first()
+    )
+
+    if last_move:
+        col = [1, 0][last_move.colour]
+        move_num = last_move.gamemove + col   # col = 1 for white and 0 for black
+    else:
+        col = move_num = 1
+
+
+    move = MODELS.Move(colour=col, piece=f"{side[0]}K", p_from=move_from, p_to=move_to, gameID=game_id, gamemove=move_num)
+    App.db.session.add(move)
+    App.db.session.commit()
+
+
+    if 1 == colour:
+        colourString = "white"
+    else:
+        colourString = "black"
+
+    currentState = MODELS.StateHistory(gameID=game_id, movenum=move_num, colour=colourString, state=jsonBoard)
+    App.db.session.add(currentState)
+    App.db.session.commit()
+
+    # lol i forgot about this
+    return "okay"
