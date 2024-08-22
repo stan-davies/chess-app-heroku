@@ -5,6 +5,7 @@ import pys.models as MODELS
 import json
 import app as App
 
+
 @App.app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "GET":
@@ -84,6 +85,7 @@ def index():
             url = new_game.id
             return redirect(url_for("index") + f"{url}/?u={username}&c=1")
 
+
 @App.app.route("/game/<string:game_id>/", methods=["GET", "POST"])
 def game(game_id):
     game = (
@@ -108,6 +110,7 @@ def game(game_id):
         colour = ""
 
     return render_template("game.html", col=col_, name=_u, colour=colour, status=game.status, board=game.currentBoard)
+
 
 @App.app.route("/submitMove/", methods=["POST"])
 def submitMove():

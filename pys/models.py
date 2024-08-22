@@ -1,9 +1,10 @@
 from flask_sqlalchemy import SQLAlchemy
 
-db = None
 
 def setDB(_db):
+    global db 
     db = _db
+
 
 class Move(db.Model):
     __tablename__ = "moves"
@@ -18,6 +19,7 @@ class Move(db.Model):
     gameID = db.Column(db.Integer)
     ply = db.Column(db.Integer)
 
+
 class Game(db.Model):
     __tablename__ = "games"
 
@@ -31,12 +33,14 @@ class Game(db.Model):
     currentBoard = db.Column(db.String(1024))
     taken = db.Column(db.String(128))
 
+
 class Player(db.Model):
     __tablename__ = "players"
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(128))
     wins = db.Column(db.Integer, default=0)
+
 
 class StateHistory(db.Model):
     __tablename__ = "stateHistory"
