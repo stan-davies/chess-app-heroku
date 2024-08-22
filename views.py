@@ -186,3 +186,50 @@ def submitMove():
         App.db.session.commit()
 
         return "{\"status\": \"" + game.status + "\"}"
+    
+
+# !! REPLACE WITH THE FANCIER VERSION
+@App.app.route("/poll/", methods=["POST"])
+def poll():
+    game_id = request.form["id"]
+
+    game = (
+        App.db.session.query(MODELS.Game)
+        .filter(MODELS.Game.id==game_id)
+        .first()
+    )
+
+    moves = (
+        App.db.session.query(MODELS.TestMove)
+        .filter(MODELS.TestMove.gameID==game_id)
+        .all()
+    )
+
+    if len(moves) > 0:
+        # colours where 1: white & 0: black
+        next_player = [1, 0][moves[-1].colour]
+        # move number
+        next_move = moves[-1].gamemove + next_player
+    else:
+        next_player = 1
+        next_move = 1
+
+    data = {
+        "status": game.status,
+        "moves": [
+            {
+                "num": m.gamemove,
+                "col": m.colour,
+                "from": m.p_from,
+                "to": m.p_to,
+                "piece": m.piece
+            } for m in moves
+        ],
+        "next-play": [
+            next_player,
+            next_move
+        ],
+        "taken": game.taken
+    }
+
+    return json.dumps(data)
