@@ -342,7 +342,7 @@ $( document ).ready(function() {
 
         setMousePos();
 
-        dragObj.style.backgroundImage = "url('/static/chess_pieces/" + square.dataset.piece.toLowerCase() + ".png')";
+        dragObj.style.backgroundImage = "url('/static/assets/" + square.dataset.piece.toLowerCase() + ".png')";
 
         dragObj.style.display = "block";
 
@@ -492,7 +492,7 @@ $( document ).ready(function() {
             "offset": document.moveOffset
         };
 
-        $.ajax({url: "/get_state/", type: "POST", data: data, success: function(stateJsonString) {
+        $.ajax({url: "/getPastBoard/", type: "POST", data: data, success: function(stateJsonString) {
             if (0 == document.moveOffset) {
                 document.frozen = false;
             } else {
@@ -733,7 +733,7 @@ $( document ).ready(function() {
             "type": document.game_status
         };
 
-        $.ajax({url: "/gameboard/", type: 'POST', data: dat, success: function(result) {
+        $.ajax({url: "/getCurrentBoard/", type: 'POST', data: dat, success: function(result) {
             var returnData = JSON.parse(JSON.parse(result));
             // data looks like:
                 // {
@@ -918,7 +918,7 @@ $( document ).ready(function() {
                     return;
                 }
 
-                let currentTaken = `<img src='/static/chess_pieces/${piece.toLowerCase()}.png'>`;
+                let currentTaken = `<img src='/static/assets/${piece.toLowerCase()}.png'>`;
                 if (piece[0] == ["w", "b"][document.myColour]) {
                     yourTaken += currentTaken;
                 } else {

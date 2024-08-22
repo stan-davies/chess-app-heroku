@@ -111,7 +111,7 @@ def submitMove():
     last_move = (
         App.db.session.query(MODELS.Move)
         .filter(MODELS.Move.gameid==gameid)
-        .order_by(-MODELS.Move.id)
+        .order_by(-MODELS.Move.gamemove)
         .first()
     )
 
@@ -177,7 +177,7 @@ def submitMove():
         winner.wins += 1
         App.db.session.commit()
 
-        return "{\"status\": \"" + game.status + "\"}"
+    return "{\"status\": \"" + game.status + "\"}"
     
 
 # !! REPLACE WITH THE FANCIER VERSION

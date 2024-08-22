@@ -197,7 +197,7 @@ th {
 }
 
 .gameboard {
-    background-image: url("/static/chess_pieces/board.png");
+    background-image: url("/static/assets/board.png");
     background-size: cover;
     background-repeat: no-repeat;
 }
@@ -245,59 +245,59 @@ th {
     display: none;
     background-size: contain;
 
-    background-image: url("/static/chess_pieces/wp.png");
+    background-image: url("/static/assets/wp.png");
 
     pointer-events: none;
 }
 
 /*white pieces*/
 .square[data-piece="wp"]::after {
-    background-image: url("/static/chess_pieces/wp.png");
+    background-image: url("/static/assets/wp.png");
 }
 
 .square[data-piece="wR"]::after {
-    background-image: url("/static/chess_pieces/wr.png");
+    background-image: url("/static/assets/wr.png");
 }
 
 .square[data-piece="wN"]::after {
-    background-image: url("/static/chess_pieces/wn.png");
+    background-image: url("/static/assets/wn.png");
 }
 
 .square[data-piece="wB"]::after {
-    background-image: url("/static/chess_pieces/wb.png");
+    background-image: url("/static/assets/wb.png");
 }
 
 .square[data-piece="wQ"]::after {
-    background-image: url("/static/chess_pieces/wq.png");
+    background-image: url("/static/assets/wq.png");
 }
 
 .square[data-piece="wK"]::after {
-    background-image: url("/static/chess_pieces/wk.png");
+    background-image: url("/static/assets/wk.png");
 }
 
 /*black pieces*/
 .square[data-piece="bp"]::after {
-    background-image: url("/static/chess_pieces/bp.png");
+    background-image: url("/static/assets/bp.png");
 }
 
 .square[data-piece="bR"]::after {
-    background-image: url("/static/chess_pieces/br.png");
+    background-image: url("/static/assets/br.png");
 }
 
 .square[data-piece="bN"]::after {
-    background-image: url("/static/chess_pieces/bn.png");
+    background-image: url("/static/assets/bn.png");
 }
 
 .square[data-piece="bB"]::after {
-    background-image: url("/static/chess_pieces/bb.png");
+    background-image: url("/static/assets/bb.png");
 }
 
 .square[data-piece="bQ"]::after {
-    background-image: url("/static/chess_pieces/bq.png");
+    background-image: url("/static/assets/bq.png");
 }
 
 .square[data-piece="bK"]::after {
-    background-image: url("/static/chess_pieces/bk.png");
+    background-image: url("/static/assets/bk.png");
 }
 
 /*row and column names*/
