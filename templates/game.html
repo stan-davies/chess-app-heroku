@@ -5,7 +5,6 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
         <meta id="status" data-name="{{ status }}">
-        <meta id="checkLegality" data-name="{{ checkLegality }}">
 
         <title>Stan Davies</title>
         <!-- !!! FIX -->
@@ -94,23 +93,6 @@
                         </div>
                     {% endif %}
                 </div>
-            </div>
-
-            <div id="test-controls">
-                <input type="checkbox" id="legal-checking" name="legal-checking-toggle" {% if checkLegality == True %}checked{% endif %}>
-                <label for="legal-checking-toggle">enable legal move checking</label>
-
-                <div id="board-change">
-                    <select name="command" id="command">
-                        <option value="empty">blank</option>
-                        <option value="reset">default</option>
-                    </select>
-
-                    <input type="button" id="update-board" value="update board">
-                </div>
-
-                <input type="button" id="state-button" value="save state">
-                <div id="state-messages"></div>
             </div>
         </div>
 

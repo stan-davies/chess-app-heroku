@@ -83,3 +83,28 @@ def index():
 
             url = new_game.id
             return redirect(url_for("enter_game") + f"{url}/?u={username}&c=1")
+
+@App.app.route("/game/<string:game_id>/", methods=["GET", "POST"])
+def game(game_id):
+    game = (
+        App.db.session.query(MODELS.Game)
+        .filter(MODELS.Game.id==game_id)
+        .first()
+    )
+
+    players = [game.p1_name, game.p2_name]
+
+    _u = request.args.get("u")
+    col_words = ["black", "white"]
+
+    if _u == players[0]:
+        col_ = game.p1_colour
+        colour = col_words[col_]
+    elif _u == players[1]:
+        col_ = game.p2_colour
+        colour = col_words[col_]
+    else:
+        col_ = 3
+        colour = ""
+
+    return render_template("test_ajax.html", col=col_, name=_u, colour=colour, status=game.status, board=game.currentBoard)

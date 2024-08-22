@@ -19,7 +19,6 @@ $( document ).ready(function() {
     var startObj;
     var startBack;
     var movesLength = 0;
-    var checkLegality = ($("#checkLegality").data().name === "True");
     var lastMove = {
         "w": {
             "from": "",
@@ -560,13 +559,11 @@ $( document ).ready(function() {
         var to = currentEnd.id;
 
         // checks that move is legal
-        if (checkLegality === true) {
-            check = legalCheck(piece, currentStart, currentEnd, currentEnd.dataset.piece);
-            if (check === false) {
-                currentStart.style.opacity = "1";
-                alert("not a legal move");
-                return;
-            };
+        check = legalCheck(piece, currentStart, currentEnd, currentEnd.dataset.piece);
+        if (check === false) {
+            currentStart.style.opacity = "1";
+            alert("not a legal move");
+            return;
         };
 
         if (castling) {
@@ -817,22 +814,7 @@ $( document ).ready(function() {
             console.log(resp);
         }});
     };
-
-    $("#legal-checking").change(function() {
-        var checked = $("#legal-checking").is(":checked");
-        dat = {
-            "id": document.gameID,
-            "checked": checked
-        };
-
-        $.ajax({url: "/toggleLMCheck/", type: 'POST', data: dat, success: function(result) {
-            var data = JSON.parse(result);
-            checkLegality = (data["checked"] === "true");
-        }, error: function(resp) {
-            console.log(resp);
-        }});
-    });
-
+    
     function changeOccupancy(_id, _changeTo) {
         // ! better name + let it
         dat = {
