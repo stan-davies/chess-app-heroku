@@ -795,11 +795,10 @@ $( document ).ready(function() {
 
     function getGameState() {
         var dat = {
-            "gameID": document.gameID,
-            "type": document.game_status
+            "gameID": document.gameID
         };
 
-        $.ajax({url: "/gameboard/", type: 'POST', data: dat, success: function(result) {
+        $.ajax({url: "/getCurrentBoard/", type: 'POST', data: dat, success: function(result) {
             var returnData = JSON.parse(JSON.parse(result));
             $(".square").each(function(index) {
                 var i = "ABCDEFGH".indexOf(this.dataset.column);

@@ -233,3 +233,20 @@ def poll():
     }
 
     return json.dumps(data)
+
+
+@App.app.route("/getCurrentBoard/", methods=["POST"])
+def getCurrentBoard():
+    game_id = request.form["gameID"]
+
+    game = (
+        App.db.session.query(MODELS.Game)
+        .filter(MODELS.Game.id==game_id)
+        .first()
+    )
+
+    board = game.currentBoard
+
+    data = json.dumps(board)
+
+    return data
