@@ -107,4 +107,82 @@ def game(game_id):
         col_ = 3
         colour = ""
 
-    return render_template("test_ajax.html", col=col_, name=_u, colour=colour, status=game.status, board=game.currentBoard)
+    return render_template("game.html", col=col_, name=_u, colour=colour, status=game.status, board=game.currentBoard)
+
+@App.app.route("/submitMove/", methods=["POST"])
+def submitMove():
+    move_from = request.form["move-from"]
+    move_to = request.form["move-to"]
+    gameID = request.form["gameID"]
+    piece = request.form["piece"]
+
+    last_move = (
+        App.db.session.query(MODELS.TestMove)
+        .filter(MODELS.TestMove.gameID==gameID)
+        .order_by(-MODELS.TestMove.id)
+        .first()
+    )
+
+    if last_move:
+        colour = [1, 0][last_move.colour]
+        move_num = last_move.gamemove + colour
+    else:
+        colour = move_num = 1
+
+    move = MODELS.TestMove(colour=colour, piece=piece, p_from=move_from, p_to=move_to, gameID=gameID, gamemove=move_num)
+    App.db.session.add(move)
+    App.db.session.commit()
+
+    game = (
+        App.db.session.query(MODELS.Game)
+        .filter(MODELS.Game.id==gameID)
+        .first()
+    )
+
+    index_from = ((int(move_from[1]) - 1) * 8) + "ABCDEFGH".index(move_from[0])
+    index_to = ((int(move_to[1]) - 1) * 8) + "ABCDEFGH".index(move_to[0])
+
+    board = json.loads(game.currentBoard)
+
+    if board[index_to] != "":
+        game.taken += f"{board[index_to]}|"
+
+    board[index_to] = board[index_from]
+    board[index_from] = ""
+
+    jsonBoard = json.dumps(board)
+    game.currentBoard = jsonBoard
+    App.db.session.commit()
+
+    if 1 == colour:
+        colourString = "white"
+    else:
+        colourString = "black"
+    currentState = MODELS.StateHistory(gameID=gameID, movenum=move_num, colour=colourString, state=jsonBoard)
+    App.db.session.add(currentState)
+    App.db.session.commit()
+
+    if "wK" not in game.currentBoard:
+        game.status = "black has won"
+        App.db.session.commit()
+
+        winner = (
+            App.db.session.query(MODELS.Player)
+            .filter(MODELS.Player.name==game.p2_name)
+            .first()
+        )
+        winner.wins += 1
+        App.db.session.commit()
+    elif "bK" not in game.currentBoard:
+        game.status = "white has won"
+        App.db.session.commit()
+
+        winner = (
+            App.db.session.query(MODELS.Player)
+            .filter(MODELS.Player.name==game.p1_name)
+            .first()
+        )
+        winner.wins += 1
+        App.db.session.commit()
+
+        return "{\"status\": \"" + game.status + "\"}"

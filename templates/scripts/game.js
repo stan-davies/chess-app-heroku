@@ -699,8 +699,7 @@ $( document ).ready(function() {
             "move-from": _from,
             "move-to": _to,
             "gameID": document.gameID,
-            "piece": _piece,
-            "type": document.game_status
+            "piece": _piece
         };
 
         if (_piece[0] == "w") {
