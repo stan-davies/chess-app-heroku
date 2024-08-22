@@ -1,0 +1,119 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <meta id="status" data-name="{{ status }}">
+        <meta id="checkLegality" data-name="{{ checkLegality }}">
+
+        <title>Stan Davies</title>
+        <!-- !!! FIX -->
+        <link rel="icon" type="image/ico" href="{{ url_for('static', filename='photos') }}/stan-davies.ico">
+        <link rel="stylesheet" href="stylesheets/game.css">
+
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
+        <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.13.2/themes/smoothness/jquery-ui.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.13.2/jquery-ui.min.js"></script>
+
+        <script defer type="text/javascript" src="scripts/game.js"></script>
+    </head>
+    <body>
+        <div id="info-window">
+            <input type="button" id="remove" value="remove">
+
+            <div id="add-piece">
+                <select name="colours" id="p-col">
+                    <option value="w">white</option>
+                    <option value="b">black</option>
+                </select>
+
+                <select name="pieces" id="p-to">
+                    <option value="p">pawn</option>
+                    <option value="R">rook</option>
+                    <option value="N">knight</option>
+                    <option value="B">bishop</option>
+                    <option value="Q">queen</option>
+                    <option value="K">king</option>
+                </select>
+
+                <input type="button" id="add" value="add">
+
+                <input type="button" id="close" value="close">
+            </div>
+        </div>
+        <div id="not-started">
+            game status is {{ status }}
+        </div>
+        <div id="in-progress">
+            <div id="move">
+                <input type="hidden" id="move-from" name="move-from" value=""/>
+                <input type="hidden" id="move-to" name="move-to" value=""/>
+                <input id="colour" type="hidden" value="{{ col }}">
+                <input id="piece" type="hidden" value=""/>
+
+                <div id="last-move"></div>
+            </div>
+
+            <div id="container">
+                <div id="gameboard" class="gameboard {% if colour == 'black' %}black{% else %}white{% endif %}">
+                    {% for i in range(8) %}
+                        <span class="row" data-row="{% if colour != 'black' %}{{8-i}}{% else %}{{i + 1}}{% endif %}">
+                        {% for j in range(8) %}
+                            {% if colour == "white" or colour == None %}
+                                <div class="square {% if (8 - i) % 2 == j % 2 %}sqw{% else %}sqb1{% endif %}" data-column="{{ "ABCDEFGH"[j] }}" data-row="{{ 8 - i }}" data-piece="" id="{{ "ABCDEFGH"[j] }}{{ 8 - i }}"></div>
+                            {% else %}
+                                <div class="square {% if (i + 1) % 2 == (7 - j) % 2 %}sqw{% else %}sqb{% endif %}" data-column="{{ "ABCDEFGH"[7 - j] }}" data-row="{{ i + 1 }}" data-piece="" id="{{ "ABCDEFGH"[7 - j] }}{{ i + 1 }}"></div>
+                            {% endif %}
+                        {% endfor %}
+                        </span>
+                    {% endfor %}
+                </div>
+                <div id="sidebar">
+                    <div id="top-of-sidebar">
+                        {% if not colour %}
+                            <div id="greeting">
+                                you are a spectator of this game
+                            </div>
+                        {% endif %}
+                        <div id="score-container">
+                            <table id="score">
+                                <thead><tr><th>move</th><th>white</th><th>black</th></tr></thead>
+                                <tbody id="score-data"></tbody>
+                            </table>
+                        </div>
+                        <div id="transport">
+                            <button id="backwards"><</button>
+                            <button id="forwards">></button>
+                        </div>
+                    </div>
+                    {% if colour %}
+                        <div id="bottom-of-sidebar">
+                            <div id="taken"></div>
+                            <input id="resign" type="button" value="resign">
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div id="test-controls">
+                <input type="checkbox" id="legal-checking" name="legal-checking-toggle" {% if checkLegality == True %}checked{% endif %}>
+                <label for="legal-checking-toggle">enable legal move checking</label>
+
+                <div id="board-change">
+                    <select name="command" id="command">
+                        <option value="empty">blank</option>
+                        <option value="reset">default</option>
+                    </select>
+
+                    <input type="button" id="update-board" value="update board">
+                </div>
+
+                <input type="button" id="state-button" value="save state">
+                <div id="state-messages"></div>
+            </div>
+        </div>
+
+        <div id="dragObj"></div>
+    </body>
+</html>

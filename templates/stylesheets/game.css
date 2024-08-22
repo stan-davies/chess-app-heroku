@@ -1,0 +1,332 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap');
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    user-select: none;
+    margin: 0;
+
+    font-family: Roboto, sans-serif;
+    font-weight: 400;
+    color: rgb(50, 50, 50);
+}
+
+#taken {
+    overflow: auto;
+    position: relative;
+    flex-wrap: wrap;
+}
+
+#taken > img {
+    display: inline-block;
+    height: 40px;
+    width: 40px;
+}
+
+.square {
+    width: 12.5%;
+    height: 12.5%;
+}
+
+#info-window {
+    width: 75px;
+    height: auto;
+    z-index: 1000;
+    box-shadow: 5px 5px 10px black;
+}
+
+button, input[type="button"] {
+    border: none;
+    background: rgb(220, 220, 220);
+    border-radius: 3px;
+    padding: 2px, 6px, 12px, 6px;
+
+    font-size: 15px;
+    font-family: Roboto, sans-serif;
+    font-weight: 400;
+    color: rgb(50, 50, 50);
+}
+
+button:hover, input[type="button"]:hover {
+    background: rgb(50, 50, 50);
+    color: rgb(220, 220, 200);
+}
+
+#transport > button {
+    width: 49%;
+    font-size: 25px;
+    margin-top: 2%;
+}
+
+#greeting {
+    font-weight: 700;
+    padding-bottom: 3px;
+}
+
+@media(min-width: 1050px) {
+    .gameboard {
+        width: auto;
+        height: 100%;
+        aspect-ratio: 1 / 1;
+
+        margin: 20px;
+    }
+
+    #container {
+        height: 95%;
+    }
+
+    #sidebar {
+        display: flex;
+        flex-direction: column;
+        min-width: 200px;
+        max-width: 300px;
+        margin-top: 20px;
+        justify-content: space-between;
+        height: 100%;
+    }
+
+    .square::after {
+        font-size: 50pt;
+    }
+}
+
+@media(max-width: 1050px) {
+    .gameboard {
+        top: 0;
+        left: 0;
+        width: 95%;
+        margin: 2.5%;
+
+        height: auto;
+
+        aspect-ratio: 1 / 1;
+    }
+
+    #in-progress > img {
+        width: 100%;
+        border: 1px solid red;
+    }
+
+    #sidebar {
+        width: 100%;
+        margin: 2%;
+    }
+
+    .square::after {
+        font-size: 8vw;
+    }
+}
+
+#taken-message {
+    height: 20px;
+    font-size: 12pt;
+    font-family: monospace;
+}
+
+#not-started {
+    visibility: visible;
+}
+
+#in-progress {
+    visibility: hidden;
+    width: 100%;
+    margin: 0;
+}
+
+#won {
+    visibility: hidden;
+}
+
+#not-started, #won {
+    position: absolute;
+    top: 30%;
+    font-size: 50pt;
+    text-align: center;
+    width: 100%;
+}
+
+#test-controls {
+    visibility: hidden;
+}
+
+#info-window {
+    display: none;
+    position: absolute;
+    border: 1px solid black;
+    background: white;
+    z-index: 1000;
+    padding: 10px;
+}
+
+#info-window * {
+    width: 100%;
+}
+
+#container {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+#resign {
+    width: 100%;
+    margin-top: 2%;
+}
+
+#score-container {
+    max-height: 700px;
+    overflow-y: scroll;
+}
+
+#score {
+    width: 100%;
+}
+
+tr {
+    width: 100%;
+}
+
+th {
+    text-align: left;
+}
+
+#score-data tr:nth-child(2n) {
+    background: rgb(230, 230, 230);
+}
+
+.gameboard {
+    background-image: url("/static/chess_pieces/board.png");
+    background-size: cover;
+    background-repeat: no-repeat;
+}
+
+.gameboard span {
+    position: relative;
+    display: flex;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 12.5%;
+    box-sizing: border-box;
+}
+
+.gameboard span div {
+    display: inline-block;
+    box-sizing: border-box;
+}
+
+.gameboard {
+    counter-reset: count;
+}
+
+.square {
+    width: 12.5%;
+    height: 100%;
+    margin: 0;
+    position: relative;
+}
+
+.square::after {
+    width: 100%;
+    height: 100%;
+    display: inline-block;
+    background-size: 85% 85%;
+    background-repeat: no-repeat;
+    background-position: 5 8;
+    content: "";
+}
+
+#dragObj {
+    width: 130px;
+    height: 130px;
+    position: absolute;
+    display: none;
+    background-size: contain;
+
+    background-image: url("/static/chess_pieces/wp.png");
+
+    pointer-events: none;
+}
+
+/*white pieces*/
+.square[data-piece="wp"]::after {
+    background-image: url("/static/chess_pieces/wp.png");
+}
+
+.square[data-piece="wR"]::after {
+    background-image: url("/static/chess_pieces/wr.png");
+}
+
+.square[data-piece="wN"]::after {
+    background-image: url("/static/chess_pieces/wn.png");
+}
+
+.square[data-piece="wB"]::after {
+    background-image: url("/static/chess_pieces/wb.png");
+}
+
+.square[data-piece="wQ"]::after {
+    background-image: url("/static/chess_pieces/wq.png");
+}
+
+.square[data-piece="wK"]::after {
+    background-image: url("/static/chess_pieces/wk.png");
+}
+
+/*black pieces*/
+.square[data-piece="bp"]::after {
+    background-image: url("/static/chess_pieces/bp.png");
+}
+
+.square[data-piece="bR"]::after {
+    background-image: url("/static/chess_pieces/br.png");
+}
+
+.square[data-piece="bN"]::after {
+    background-image: url("/static/chess_pieces/bn.png");
+}
+
+.square[data-piece="bB"]::after {
+    background-image: url("/static/chess_pieces/bb.png");
+}
+
+.square[data-piece="bQ"]::after {
+    background-image: url("/static/chess_pieces/bq.png");
+}
+
+.square[data-piece="bK"]::after {
+    background-image: url("/static/chess_pieces/bk.png");
+}
+
+/*row and column names*/
+.square::before {
+    position: absolute;
+}
+
+.white [data-row="8"]::before {
+    top: -17px;
+    left: 50%;
+    content: attr(data-column);
+}
+
+.white .row::before {
+    position: absolute;
+    content: attr(data-row);
+    left: -10px;
+    top: 40%;
+}
+
+.black [data-row="1"]::before {
+    top: -17px;
+    left: 50%;
+    content: attr(data-column);
+}
+
+.black .row::before {
+    position: absolute;
+    content: attr(data-row);
+    left: -10px;
+    top: 40%;
+}
