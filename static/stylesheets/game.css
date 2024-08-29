@@ -333,5 +333,5 @@ th {
 
 #all-the-pieces {
     position: absolute;
-    left: -1000;
+    left: -100000px;
 }
