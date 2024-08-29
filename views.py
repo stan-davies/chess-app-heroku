@@ -191,6 +191,7 @@ def pollData(gameID):
     global movesPlayed
 
     lastMoves = None
+    last_event_id = int(request.headers.get('Last-Event-ID', 0))
     while True:
         if movesPlayed != lastMoves:
             with App.app.app_context():
@@ -215,6 +216,26 @@ def pollData(gameID):
                 next_player = 1
                 next_move = 1
 
+            # Only send new events
+            # if moves and moves[-1].gamemove > last_event_id:
+            #     next_player = 1 if moves[-1].colour == 0 else 0
+            #     next_move = moves[-1].gamemove + next_player
+            #     data = {
+            #         "status": game.status,
+            #         "moves": [
+            #             {
+            #                 "num": m.gamemove,
+            #                 "col": m.colour,
+            #                 "from": m.p_from,
+            #                 "to": m.p_to,
+            #                 "piece": m.piece
+            #             } for m in moves
+            #         ],
+            #         "next-play": [next_player, next_move],
+            #         "taken": game.taken,
+            #         "board": game.currentboard
+            #     }
+
             data = {
                 "status": game.status,
                 "moves": [
@@ -235,7 +256,9 @@ def pollData(gameID):
             }
             
             encoded = json.dumps(data)
-            yield f"data: " + encoded + "\n\n"
+            # yield f"data: " + encoded + "\n\n"
+            yield f"id: {last_event_id}\ndata: {encoded}\n\n"
+            last_moves = movesPlayed
             lastMoves = movesPlayed
         sleep(0.5)
 
