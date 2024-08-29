@@ -828,127 +828,132 @@ $( document ).ready(function() {
         }});
     };
 
-    function poll() {
-        if (document.frozen) {
-            return;
+    function poll(data) {
+        let status = data["status"];
+        let moves = data["moves"];
+        let nextPlay = data["next-play"];
+        let taken = data["taken"];
+        document.moveId = nextPlay[1];
+        document.col = nextPlay[0];
+
+        if (status.indexOf("has won") > -1) {
+            frozen = true;
         };
 
-        // ! use fetch
-        $.ajax({url: "/poll/", type: 'POST', data: {"id": document.gameID, "type": document.game_status }, success: function(result) {
-            var data = JSON.parse(result);
-            var status = data["status"];
-            var moves = data["moves"];
-            var nextPlay = data["next-play"];
-            var taken = data["taken"];
-            document.moveId = nextPlay[1];
-            document.col = nextPlay[0];
+        if (moves.length > movesLength) {
+            getGameState();
+            movesLength = moves.length;
+        };
 
-            if (status.indexOf("has won") > -1) {
-                frozen = true;
-            };
+        document.plyCounter = moves.length;
 
-            if (moves.length > movesLength) {
-                getGameState();
-                movesLength = moves.length;
-            };
+        // put this data in a global array so that we can have a look at it in castlingCheck if we need to, this can be used for en passant too
+        if (moves.length > 0) {
+            $("#result").html("");
 
-            document.plyCounter = moves.length;
+            const score = document.getElementById("score-data");
+            score.innerHTML = "";
 
-            // put this data in a global array so that we can have a look at it in castlingCheck if we need to, this can be used for en passant too
-            if (moves.length > 0) {
-                $("#result").html("");
+            moveHistory = "";
 
-                const score = document.getElementById("score-data");
-                score.innerHTML = "";
+            for (let i = 0; i < moves.length / 2; i++) {
+                let row = document.createElement("tr");
 
-                moveHistory = "";
+                let num = document.createElement("td");
+                num.textContent = i + 1;
+                row.appendChild(num);
 
-                for (let i = 0; i < moves.length / 2; i++) {
-                    let row = document.createElement("tr");
+                let piece;
+                let move;
 
-                    let num = document.createElement("td");
-                    num.textContent = i + 1;
-                    row.appendChild(num);
+                let whitesMove = document.createElement("td");
+                piece = moves[i * 2].piece.charAt(1) == "p" ? "" : moves[i * 2].piece.charAt(1);
+                move = piece + moves[i * 2].to.toLowerCase();
+                if ("K" == piece && "e" == moves[i * 2].from.toLowerCase().charAt(0)) {
+                    if ("g" == moves[i * 2].to.toLowerCase().charAt(0)) {
+                        move = "O-O";
+                    } else if ("c" == moves[i * 2].to.toLowerCase().charAt(0)) {
+                        move = "O-O-O";
+                    };
+                };
+                whitesMove.textContent = move;
+                row.appendChild(whitesMove);
 
-                    let piece;
-                    let move;
-
-                    let whitesMove = document.createElement("td");
-                    piece = moves[i * 2].piece.charAt(1) == "p" ? "" : moves[i * 2].piece.charAt(1);
-                    move = piece + moves[i * 2].to.toLowerCase();
-                    if ("K" == piece && "e" == moves[i * 2].from.toLowerCase().charAt(0)) {
-                        if ("g" == moves[i * 2].to.toLowerCase().charAt(0)) {
+                if ((i * 2) + 1 < moves.length) {
+                    let blacksMove = document.createElement("td");
+                    piece = moves[(i * 2) + 1].piece.charAt(1) == "p" ? "" : moves[(i * 2) + 1].piece.charAt(1);
+                    move = piece + moves[(i * 2) + 1].to.toLowerCase();
+                    if ("K" == piece && "e" == moves[(i * 2) + 1].from.toLowerCase().charAt(0)) {
+                        if ("g" == moves[(i * 2) + 1].to.toLowerCase().charAt(0)) {
                             move = "O-O";
-                        } else if ("c" == moves[i * 2].to.toLowerCase().charAt(0)) {
+                        } else if ("c" == moves[(i * 2) + 1].to.toLowerCase().charAt(0)) {
                             move = "O-O-O";
                         };
                     };
-                    whitesMove.textContent = move;
-                    row.appendChild(whitesMove);
-
-                    if ((i * 2) + 1 < moves.length) {
-                        let blacksMove = document.createElement("td");
-                        piece = moves[(i * 2) + 1].piece.charAt(1) == "p" ? "" : moves[(i * 2) + 1].piece.charAt(1);
-                        move = piece + moves[(i * 2) + 1].to.toLowerCase();
-                        if ("K" == piece && "e" == moves[(i * 2) + 1].from.toLowerCase().charAt(0)) {
-                            if ("g" == moves[(i * 2) + 1].to.toLowerCase().charAt(0)) {
-                                move = "O-O";
-                            } else if ("c" == moves[(i * 2) + 1].to.toLowerCase().charAt(0)) {
-                                move = "O-O-O";
-                            };
-                        };
-                        blacksMove.textContent = move;
-                        row.appendChild(blacksMove);
-                    };
-
-                    score.appendChild(row);
+                    blacksMove.textContent = move;
+                    row.appendChild(blacksMove);
                 };
+
+                score.appendChild(row);
             };
+        };
 
-            var takenPieces = taken.split("|");
-            $("#taken").html("");
-            var yourTaken = "";
-            var enemyTaken = "";
-            takenPieces.forEach( function(piece) {
-                if (piece == "") {
-                    return;
-                }
+        var takenPieces = taken.split("|");
+        $("#taken").html("");
+        var yourTaken = "";
+        var enemyTaken = "";
+        takenPieces.forEach( function(piece) {
+            if (piece == "") {
+                return;
+            }
 
-                let currentTaken = `<img src='/static/assets/${piece.toLowerCase()}.png'>`;
-                if (piece[0] == ["w", "b"][document.myColour]) {
-                    yourTaken += currentTaken;
-                } else {
-                    enemyTaken += currentTaken;
-                };
-            });
-
-            $("#taken").append(enemyTaken);
-            $("#taken").append(yourTaken);
-
-            document.game_status = status;
-
-            if (document.game_status == "not started") {
-                $("#in-progress").css("visibility", "hidden");
-                $("#not-started").css("visibility", "visible");
-            } else if (document.game_status == "in progress") {
-                $("#in-progress").css("visibility", "visible");
-                $("#not-started").css("visibility", "hidden");
+            let currentTaken = `<img src='/static/assets/${piece.toLowerCase()}.png'>`;
+            if (piece[0] == ["w", "b"][document.myColour]) {
+                yourTaken += currentTaken;
             } else {
-                $("#in-progress").css("visibility", "visible");
-                $("#not-started").css("visibility", "hidden");
-                document.frozen = true;
+                enemyTaken += currentTaken;
             };
+        });
 
-            $("#won").html("game is over, " + document.game_status);
-        }, error: function(resp) {
-            console.log(resp);
-        }});
+        $("#taken").append(enemyTaken);
+        $("#taken").append(yourTaken);
+
+        document.game_status = status;
+
+        if (document.game_status == "not started") {
+            $("#in-progress").css("visibility", "hidden");
+            $("#not-started").css("visibility", "visible");
+        } else if (document.game_status == "in progress") {
+            $("#in-progress").css("visibility", "visible");
+            $("#not-started").css("visibility", "hidden");
+        } else {
+            $("#in-progress").css("visibility", "visible");
+            $("#not-started").css("visibility", "hidden");
+            document.frozen = true;
+        };
+
+        $("#won").html("game is over, " + document.game_status);
+
+        console.timeEnd("timer");
+        console.timeLog("timer");
     };
 
-    console.log(document.game_status);
-    if (document.game_status != "test") {
-        var interval = setInterval(poll, 1000);
-    } else {
-        var interval = setInterval(getGameState, 1000);
+    const eventSource = new EventSource(`/poll/${document.gameID}/`);
+
+    eventSource.onmessage = (event) => {
+        console.log("poll");
+        if (document.frozen) {
+            console.log("frozen");
+            return;
+        };
+        
+        let liveData = JSON.parse(event.data);
+        console.log(liveData);
+        console.time("timer");
+        poll(liveData);
+    };
+
+    eventSource.onerror = (event) => {
+        console.error(`error occured: ${event}`);
     };
 });

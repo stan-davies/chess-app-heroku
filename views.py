@@ -1,9 +1,14 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, Response
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import desc
 import models as MODELS
 import json
 import app as App
+from time import sleep
+from sys import stdout
+
+
+movesPlayed = 0
 
 
 @App.app.route("/", methods=["GET", "POST"])
@@ -48,7 +53,7 @@ def index():
                 colour = 0
             else:
                 colour = None;
-
+            
             url = game.id
             return redirect(url_for("index") + f"game/{url}/?u={username}&c={colour}")
         else:
@@ -177,54 +182,66 @@ def submitMove():
         winner.wins += 1
         App.db.session.commit()
 
+    global movesPlayed
+    movesPlayed += 1
     return "{\"status\": \"" + game.status + "\"}"
     
 
-# !! REPLACE WITH THE FANCIER VERSION
-@App.app.route("/poll/", methods=["POST"])
-def poll():
-    game_id = request.form["id"]
+def pollData(gameID):
+    global movesPlayed
 
-    game = (
-        App.db.session.query(MODELS.Game)
-        .filter(MODELS.Game.id==game_id)
-        .first()
-    )
+    lastMoves = None
+    while True:
+        if movesPlayed != lastMoves:
+            with App.app.app_context():
+                game = (
+                    App.db.session.query(MODELS.Game)
+                    .filter(MODELS.Game.id==gameID)
+                    .first()
+                )
 
-    moves = (
-        App.db.session.query(MODELS.Move)
-        .filter(MODELS.Move.gameid==game_id)
-        .all()
-    )
+                moves = (
+                    App.db.session.query(MODELS.Move)
+                    .filter(MODELS.Move.gameid==gameID)
+                    .all()
+                )
 
-    if len(moves) > 0:
-        # colours where 1: white & 0: black
-        next_player = [1, 0][moves[-1].colour]
-        # move number
-        next_move = moves[-1].gamemove + next_player
-    else:
-        next_player = 1
-        next_move = 1
+            if len(moves) > 0:
+                # colours where 1: white & 0: black
+                next_player = [1, 0][moves[-1].colour]
+                # move number
+                next_move = moves[-1].gamemove + next_player
+            else:
+                next_player = 1
+                next_move = 1
 
-    data = {
-        "status": game.status,
-        "moves": [
-            {
-                "num": m.gamemove,
-                "col": m.colour,
-                "from": m.p_from,
-                "to": m.p_to,
-                "piece": m.piece
-            } for m in moves
-        ],
-        "next-play": [
-            next_player,
-            next_move
-        ],
-        "taken": game.taken
-    }
+            data = {
+                "status": game.status,
+                "moves": [
+                    {
+                        "num": m.gamemove,
+                        "col": m.colour,
+                        "from": m.p_from,
+                        "to": m.p_to,
+                        "piece": m.piece
+                    } for m in moves
+                ],
+                "next-play": [
+                    next_player,
+                    next_move
+                ],
+                "taken": game.taken
+            }
+            
+            encoded = json.dumps(data)
+            yield f"data: " + encoded + "\n\n"
+            lastMoves = movesPlayed
+        sleep(0.5)
 
-    return json.dumps(data)
+
+@App.app.route("/poll/<string:gameID>/", methods=["GET", "POST"])
+def poll(gameID):
+    return Response(pollData(gameID), mimetype='text/event-stream')
 
 
 # merge the following two functions
