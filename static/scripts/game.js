@@ -945,7 +945,7 @@ $( document ).ready(function() {
     const eventSource = new EventSource(`/poll/${document.gameID}/`);
 
     eventSource.onmessage = (event) => {
-        console.log("poll");
+        console.log(event.id);
         if (document.frozen) {
             console.log("frozen");
             return;

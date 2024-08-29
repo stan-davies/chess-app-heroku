@@ -191,7 +191,7 @@ def pollData(gameID):
     global movesPlayed
 
     lastMoves = None
-    last_event_id = int(request.headers.get('Last-Event-ID', 0))
+    # last_event_id = int(request.headers.get('Last-Event-ID', 0))
     while True:
         if movesPlayed != lastMoves:
             with App.app.app_context():
@@ -257,8 +257,7 @@ def pollData(gameID):
             
             encoded = json.dumps(data)
             # yield f"data: " + encoded + "\n\n"
-            yield f"id: {last_event_id}\ndata: {encoded}\n\n"
-            last_moves = movesPlayed
+            yield f"id: {len(moves)}\ndata: {encoded}\n\n"
             lastMoves = movesPlayed
         sleep(0.5)
 
