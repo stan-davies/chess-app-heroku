@@ -958,6 +958,6 @@ $( document ).ready(function() {
     };
 
     eventSource.onerror = (event) => {
-        console.error(`error occured: ${event}`);
+        console.error("error occuredl: ", event);
     };
 });

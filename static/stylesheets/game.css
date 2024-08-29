@@ -330,3 +330,8 @@ th {
     left: -10px;
     top: 40%;
 }
+
+#all-the-pieces {
+    position: absolute;
+    left: -1000;
+}
