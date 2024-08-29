@@ -942,7 +942,7 @@ $( document ).ready(function() {
         console.timeEnd("timer");
     };
 
-    const eventSource = new EventSource(`/poll/${document.gameID}/`);
+    let eventSource = new EventSource(`/poll/${document.gameID}/`);
 
     eventSource.onmessage = (event) => {
         console.log(event.id);
