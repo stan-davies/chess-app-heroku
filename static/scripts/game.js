@@ -958,6 +958,17 @@ $( document ).ready(function() {
     };
 
     eventSource.onerror = (event) => {
-        console.error("error occuredl: ", event);
+        console.log(event);
+        if (event.target.readyState === EventSource.CLOSED) {
+            console.error('EventSource connection was closed.');
+        } else if (event.target.readyState === EventSource.CONNECTING) {
+            console.error('EventSource connection is reconnecting.');
+        } else {
+            console.error('EventSource encountered an error.');
+        }
+        eventSource.close();
+        setTimeout(() => {
+            eventSource = new EventSource(`/poll/${document.gameID}`);
+        }, 5000);
     };
 });
