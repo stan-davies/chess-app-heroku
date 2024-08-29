@@ -259,7 +259,7 @@ def pollData(gameID):
             # yield f"data: " + encoded + "\n\n"
             yield f"id: {len(moves)}\ndata: {encoded}\n\n"
             lastMoves = movesPlayed
-        sleep(0.5)
+        sleep(1)
 
 
 @App.app.route("/poll/<string:gameID>/", methods=["GET", "POST"])
