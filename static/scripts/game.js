@@ -718,7 +718,8 @@ $( document ).ready(function() {
                 $("#not-started").css("visibility", "hidden");
                 $("#won").css("visibility", "visible");
             };
-            getGameState();
+            // i dont think this is required because making a move will fire an event which SSE willl tell the client about anyway and then update the board in that
+            // getGameState();
             setTimeout(() => { currentStart.style.opacity = "1"; }, 100);
         }, error: function(resp) {
             console.log(resp);
@@ -802,9 +803,6 @@ $( document ).ready(function() {
                 var i = "ABCDEFGH".indexOf(this.dataset.column);
                 var j = this.dataset.row - 1;
                 this.dataset.piece = returnData[(j * 8) + i];
-
-                let piece = document.createElement('img');
-                piece
             });
         }, error: function(resp) {
             console.log(resp);
@@ -833,6 +831,7 @@ $( document ).ready(function() {
         let moves = data["moves"];
         let nextPlay = data["next-play"];
         let taken = data["taken"];
+        let boardData = JSON.parse(data["board"]);
         document.moveId = nextPlay[1];
         document.col = nextPlay[0];
 
@@ -840,10 +839,16 @@ $( document ).ready(function() {
             frozen = true;
         };
 
-        if (moves.length > movesLength) {
-            getGameState();
-            movesLength = moves.length;
-        };
+        $(".square").each(function(index) {
+            var i = "ABCDEFGH".indexOf(this.dataset.column);
+            var j = this.dataset.row - 1;
+            this.dataset.piece = boardData[(j * 8) + i];
+        });
+
+        // if (moves.length > movesLength) {
+        //     getGameState();
+        //     movesLength = moves.length;
+        // };
 
         document.plyCounter = moves.length;
 
@@ -935,7 +940,6 @@ $( document ).ready(function() {
         $("#won").html("game is over, " + document.game_status);
 
         console.timeEnd("timer");
-        console.timeLog("timer");
     };
 
     const eventSource = new EventSource(`/poll/${document.gameID}/`);

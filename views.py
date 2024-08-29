@@ -230,7 +230,8 @@ def pollData(gameID):
                     next_player,
                     next_move
                 ],
-                "taken": game.taken
+                "taken": game.taken,
+                "board": game.currentboard
             }
             
             encoded = json.dumps(data)
