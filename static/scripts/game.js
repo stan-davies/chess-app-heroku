@@ -10,6 +10,9 @@ $( document ).ready(function() {
     document.moveOffset = 0;
     document.frozen = false;
     document.plyCounter = 0;
+    document.latestBoard;
+    document.currentStartIndex;
+    document.currentEndIndex;
     const dragObj = document.getElementById("dragObj");
     let followMouse = false;
     var nextPlayer = 1;
@@ -49,11 +52,8 @@ $( document ).ready(function() {
     let moveHistory = "";
 
     // ! _ec=""
-    function legalCheck(_piece, _start, _end, _endContents) {
-        var fromS = _start.id;
-        var toS = _end.id;
-        // ! charAt
-        var col = _piece[0];
+    function legalCheck(_piece, _start_id, _end_id, _endContents) {
+        var col = _piece.charAt(0);
 
         // get the type of piece
         var pieceType;
@@ -65,15 +65,14 @@ $( document ).ready(function() {
         };
 
         // convert square id's to numerical positions
-        // ! columnOfSquare
-        var fromS0 = String(fromS).charAt(0);
-        var startPos = ["ABCDEFGH".indexOf(fromS0) + 1, parseInt(fromS.charAt(1))];
-        var endPos = ["ABCDEFGH".indexOf(toS.charAt(0)) + 1, parseInt(toS.charAt(1))];
+        var startPos = ["ABCDEFGH".indexOf(_start_id.charAt(0)) + 1, parseInt(_start_id.charAt(1))];
+        var endPos = ["ABCDEFGH".indexOf(_end_id.charAt(0)) + 1, parseInt(_end_id.charAt(1))];
 
         // creates a vector of the movement of the piece
         var vector = [endPos[0] - startPos[0], endPos[1] - startPos[1]];
 
         // convert vectors to unity vectors where necessary
+        let uVector;
         if (pieceType == "R" || pieceType == "B" || pieceType == "Q") {
             uVector = unitise(vector);
         };
@@ -83,19 +82,19 @@ $( document ).ready(function() {
         // ! switch case
         if (pieceType == "R") {
             // combination of check for movement and if there are pieces in the way, this is only needed for R, B & Q
-            check = (pdCheck(uVector)[0] && blockedCheck(vector, uVector, startPos, toS));
+            check = (pdCheck(uVector)[0] && blockedCheck(vector, uVector, startPos, endPos));
         } else if (pieceType == "B") {
-            check = (pdCheck(uVector)[1] && blockedCheck(vector, uVector, startPos, toS));
+            check = (pdCheck(uVector)[1] && blockedCheck(vector, uVector, startPos, endPos));
         } else if (pieceType == "Q") {
             var pd = pdCheck(uVector);
             var movementCheck = (pd[0] || pd[1]);
-            check = (movementCheck && blockedCheck(vector, uVector, startPos, toS));
+            check = (movementCheck && blockedCheck(vector, uVector, startPos, endPos));
         } else if (pieceType == "K") {
-            check = kingCheck(vector, fromS, toS, col);
+            check = kingCheck(vector, _start_id, _end_id, col);
         } else if (pieceType == "N") {
             check = nCheck(vector);
         } else {
-            check = pCheck(_start, _end, vector, col, _endContents);
+            check = pCheck(_start_id, vector, col, _endContents);
         };
 
         return check;
@@ -134,18 +133,6 @@ $( document ).ready(function() {
         return [P, D];
     };
 
-    function kCheck(_vector, _from, _to, _col) {
-        var pd = pdCheck(_vector);
-        var mag = calcMagnitude(_vector);
-        var uvec = unitise(_vector);
-        var from = $(`#${_from}`)[0];
-        var col = from.dataset.piece[0];
-        // basic check to validate king movement
-        if (mag < 2 && (pd[0] || pd[1])) {
-            return true;
-        };
-    };
-
     function kingCheck(_vector, _from, _to, _col) {
         let mag = calcMagnitude(_vector);
 
@@ -159,7 +146,7 @@ $( document ).ready(function() {
             let correctRowIndex = ("w" === _col) ? 0 : 7;
             let correctColumnIndex = 4;
 
-            if (correctColumnIndex == "ABCDEFGH".indexOf(_from[0]) && correctRowIndex == parseInt(_from[1]) - 1) {
+            if (correctColumnIndex == "ABCDEFGH".indexOf(_from.charAt(0)) && correctRowIndex == parseInt(_from.charAt(1)) - 1) {
                 let direction = _vector[0] / Math.abs(_vector[0]);
                 return castlingCheck(direction, correctRowIndex, correctColumnIndex, _col);
             };
@@ -248,8 +235,7 @@ $( document ).ready(function() {
     };
 
     // check if a vector describes a legal pawns move, excluding en passante
-    function pCheck(_from, _to, _vector, _piece, _endContents) {
-        var fromId = _from.id;
+    function pCheck(_from_id, _vector, _piece, _endContents) {
         var col = "bw".indexOf(_piece);
         var yDirection = [-1, 1][col];
 
@@ -260,7 +246,7 @@ $( document ).ready(function() {
         if (vector == JSON.stringify([0, yDirection]) && _endContents == "") {
             return true;
         // two forward check
-        } else if ((fromId[1] == 2 || fromId[1] == 7) && vector == JSON.stringify([0, 2 * yDirection]) && _endContents == "") {
+        } else if ((_from_id.charAt(1) == 2 || _from_id.charAt(1) == 7) && vector == JSON.stringify([0, 2 * yDirection]) && _endContents == "") {
             return true;
         // check for captures
         } else if (_endContents != "" && (vector == JSON.stringify([-1, yDirection]) || vector == JSON.stringify([1, yDirection]))) {
@@ -271,21 +257,17 @@ $( document ).ready(function() {
     };
 
     // function checks if another piece is in the way of the one you are trying to move
-    // ! calculate unit vector from vector
     // from and to given as (x, y)
-    function blockedCheck(_vector, _uVec, _from, _to) {
-        var current = _from;
-        var currentId;
+    function blockedCheck(_vector, _uVec, _start_pos, _end_pos) {
+        let current = _start_pos;
 
-        var mag = Math.floor(calcMagnitude(_vector));
-        for (var i = 0; i < mag - 1; i++) {
+        let mag = Math.floor(calcMagnitude(_vector));
+        for (let i = 0; i < mag - 1; i++) {
             current = addVec(current, _uVec);
-            // ! charAt
-            currentId = "ABCDEFGH"[current[0] - 1] + current[1];
             // ? get rid of this
-            if (currentId == _to) {
+            if (current == _end_pos) {
                 return true;
-            } else if ($(`#${currentId}`)[0].dataset.piece != "") {
+            } else if (document.latestBoard[current[1] * 8 + current[0]] != "") {
                 return false;
             };
         };
@@ -370,7 +352,20 @@ $( document ).ready(function() {
                 return;
             };
 
-            validateMove();
+            let startSquarePiece = currentStart.dataset.piece;
+            let destinationSquarePiece = currentEnd.dataset.piece;
+            
+            currentEnd.dataset.piece = currentStart.dataset.piece;
+            currentStart.dataset.piece = "";
+            let valid = validateMove(startSquarePiece, destinationSquarePiece);
+            if (!valid) {
+                currentStart.dataset.piece = currentEnd.dataset.piece;
+                currentEnd.dataset.piece = "";
+                currentStart.style.opacity = "1";
+            } else {
+                makeMove(currentStart.dataset.piece, currentStart.id, currentEnd.id);
+                currentStart.style.opacity = "1";
+            };
         } else {
             currentStart.style.opacity = "1";
         };
@@ -531,168 +526,96 @@ $( document ).ready(function() {
         }});
     };
 
-    function validateMove() {
+    function validateMove(startSquarePiece, destinationSquarePiece) {
         // ensures the from & to are not null
         if (currentStart.id == null || currentEnd.id == null) {
             currentStart.style.opacity = "1";
             alert("choose a valid move");
-            return;
+            return false;
         };
 
         // ensure you aren't trying to move an opponents piece
-        var pieceCol = "bw".indexOf(currentStart.dataset.piece[0]);
+        var pieceCol = "bw".indexOf(startSquarePiece.charAt(0));
         if (pieceCol != document.myColour && document.game_status != "test") {
             currentStart.style.opacity = "1";
             alert("not your piece");
-            return;
+            return false;
         };
 
         // ensures you're moving to either an empty square or a square containing an enemy piece
-        if (currentEnd.dataset.piece != "" && currentEnd.dataset.piece[0] == currentStart.dataset.piece[0]) {
+        if (destinationSquarePiece != "" && destinationSquarePiece.charAt(0) == startSquarePiece.charAt(0)) {
             currentStart.style.opacity = "1";
             alert("cannot move piece here");
-            return;
+            return false;
         };
 
-        var piece = currentStart.dataset.piece;
-
         // checks that move is legal
-        let check = legalCheck(piece, currentStart, currentEnd, currentEnd.dataset.piece);
+        let check = legalCheck(startSquarePiece, currentStart, currentEnd, destinationSquarePiece);
         if (check === false) {
             currentStart.style.opacity = "1";
             alert("not a legal move");
-            return;
+            return false;
         };
 
         if (castling) {
             castling = false;
-            return;
+            return false;
         };
+
+
+        // run it, try it, sort out edge cases
 
         var enemyCol = ["w", "b"][pieceCol];
-        // ! having the two different functions is now an obselete setup
-        if (piece[1] == "K") {
-            getPieces(enemyCol, kingCallBack);
-        } else {
-            getPieces(enemyCol, otherCallBack);
-        };
-    };
-
-    // enemy pieces contains a list containing ID's of squares occupied by enemy pieces
-    // kingpos contains the DOM element that is the square occupied by the current players king
-    function kingSafetyCallBack(_enemyPieces, _kingPos) {
-        let startPiece = currentStart.dataset.piece;
-        let endPiece = currentEnd.dataset.piece;
-
-        let kingSquare;
-        if (_kingPos.id === currentStart.id) {
-            kingSquare = currentEnd;
-        } else {
-            kingSquare = _kingPos;
-        };
-
-        // temporarily enact move
-        currentStart.dataset.piece = "";
-        currentEnd.dataset.piece = startPiece;
-
-        let canMove = true;
-
-        _enemyPieces.forEach((squareID) => {
-            if (squareID == currentEnd.id) {
-                return;
+        var enemyPieces = [];
+        var friendlyKingPos;
+        // iterates through the board, from A8 to H1
+        for (var i = 0; i < document.latestBoard.length; i++) {
+            // this is the enemy pieces
+            if (document.latestBoard[i].charAt(0) == enemyCol) {
+                var column = "ABCDEFGH"[i % 8];
+                var row = Math.floor(i / 8) + 1;
+                var id = column + String(row);
+                var square = document.getElementById(column + row);
+                // pieces[returnData[i]] = square;
+                // stores DOM elements corresponding to all of the required squares
+                // therefore, this could all have been done by iterating through the DOM objects, however doing it from the database is 'safer'
+                // we could optionally check each square against the board to ensure everything is as it should be, it a disagreement is found, overwrite the board, although that should be done for every square, and not here
+                enemyPieces.push(id);
             };
 
-            let square = document.getElementById(squareID);
-            // takes (attacking piece, attcking piece square, defending piece square, defending piece) adn the defending piece is always the king
-            // 'kingSquare' is used over '_kingPos' incase the king was the piece moved
-            let canAttackCheck = legalCheck(square.dataset.piece, square, kingSquare, kingSquare.dataset.piece);
-
-            if (true === canAttackCheck) {
-                alert("cannot move king into check!");
-                canMove = false;
-                return;
+            // this is our king
+            if (document.latestBoard[i].charAt(0) != enemyCol && document.latestBoard[i].charAt(1) == "K") {
+                var column = "ABCDEFGH"[i % 8];
+                var row = Math.floor(i / 8) + 1;
+                var square = document.getElementById(column + row);
+                friendlyKingPos = square;
             };
-        });
-
-        // undo the temporary move
-        currentStart.dataset.piece = startPiece;
-        currentEnd.dataset.piece = endPiece;
-
-        return canMove;
-    };
-
-    // the next two functions can now be removed
-
-    // ! possible optimisation to collapse these two callback functions into one
-    // ! make sure to add an alert for if you are in check as well as if you are trying to move into check
-
-    // iterates through each of the enemy pieces and determines if that piece can legally move onto the square the king intends to move to
-    function kingCallBack(_pieces, _kingPos) {
-        var piece = currentStart.dataset.piece;
-        var from = currentStart.id;
-        var to = currentEnd.id;
-
-        var kingColour = ["w", "b"][["w", "b"].indexOf(currentStart.dataset.piece[0])];  // charAt   also make it better because none of it is needed, we do not need an inversion here   tell it what colour is playing rather than having to work it out
-        var kingName = kingColour + "K";
-
-        var check = false;
-
-        _pieces.forEach((sqID) => {
-            var sq = document.getElementById(sqID);
-            enemyCheck = legalCheck(sq.dataset.piece, sq, currentEnd, kingName);
-            if (enemyCheck === true) {
-                check = true;
-                alert("cannot move king into check");
-                return;
-            };
-        });
-
-        if (!check) {
-            makeMove(piece, from, to);
         };
-    };
 
-    // ! rename this to something more explanatory if not collapsing the two callbacks into one
-    function otherCallBack(_pieces, _kingPos) {
-        var startPiece = currentStart.dataset.piece;
-        var endPiece = currentEnd.dataset.piece;
-        var from = currentStart.id;
-        var to = currentEnd.id;
+        // use the newly updated board so that what we are checking reflects the board with the candidate move made
 
-        currentStart.dataset.piece = "";
-        currentEnd.dataset.piece = startPiece;
+        let kingSafe = true;
 
-        var kingColour = _kingPos.dataset.piece[0];
-        var kingID = _kingPos.id;
+        // CHECK IF THIS WORKS
 
-        var check = false;
+        enemyPieces.forEach((sqID) => {
+            let attacking_piece = document.latestBoard["ABCDEFGH".indexOf(sqID.charAt(0)) * 8 + Number(sqID.charAt(1))];
 
-        _pieces.forEach((sqID) => {
-            // ensures current piece isn't your own - happens if you have taken enemy piece
-            var sq = document.getElementById(sqID);
-            // first char indicates piece colour
-            var pieceCol = sq.dataset.piece[0];
-            if (pieceCol != kingColour) {
-                enemyCheck = legalCheck(sq.dataset.piece, sq, _kingPos, kingID);
-                console.log("legalC: " + sq.dataset.piece + " " + sq.id + " " + enemyCheck);
-                if (enemyCheck === true) {
-                    check = true;
+            if (sqID != friendlyKingPos.id) {
+                enemyCanTakeKing = legalCheck(attacking_piece, sqID, friendlyKingPos.id, friendlyKingPos.dataset.piece);
+                if (enemyCanTakeKing === true) {
+                    kingSafe = false;
                     alert("cannot move king into check");
                     return;
                 };
             };
         });
 
-        currentStart.dataset.piece = startPiece;
-        currentEnd.dataset.piece = endPiece;
-
-        if (!check) {
-            makeMove(startPiece, from, to);
-        };
+        return kingSafe;
     };
 
     function makeMove(_piece, _from, _to) {
-        // updates database with new move, piece is moved later in 'getGameState' when board is updated
+        // updates database with new move, piece is moved graphically later in 'getGameState' when board is updated
         var dat = {
             "move-from": _from,
             "move-to": _to,
@@ -720,77 +643,11 @@ $( document ).ready(function() {
             };
             // i dont think this is required because making a move will fire an event which SSE willl tell the client about anyway and then update the board in that
             // getGameState();
-            setTimeout(() => { currentStart.style.opacity = "1"; }, 100);
+            
         }, error: function(resp) {
             console.log(resp);
         }});
     };
-
-    function getPieces(_col, callBack) {
-        var dat = {
-            "gameID": document.gameID,
-            "type": document.game_status
-        };
-
-        $.ajax({url: "/getCurrentBoard/", type: 'POST', data: dat, success: function(result) {
-            var returnData = JSON.parse(JSON.parse(result));
-            // data looks like:
-                // {
-                    // "bp", "bK", "bR", "", ...
-                // }
-                // bp is at A8, then B8, C8, etc, empty string indicated no piece is present
-
-            // var pieces = {};
-            var pieces = [];
-            var kingPos;
-            // iterates through the board, from A8 to H1
-            for (var i = 0; i < returnData.length; i++) {
-                // this is the enemy pieces
-                if (returnData[i][0] == _col) {  // charAt
-                    var column = "ABCDEFGH"[i % 8];
-                    var row = Math.floor(i / 8) + 1;
-                    var id = column + String(row);
-                    var square = document.getElementById(column + row);
-                    // pieces[returnData[i]] = square;
-                    // stores DOM elements corresponding to all of the required squares
-                    // therefore, this could all have been done by iterating through the DOM objects, however doing it from the database is 'safer'
-                    // we could optionally check each square against the board to ensure everything is as it should be, it a disagreement is found, overwrite the board, although that should be done for every square, and not here
-                    pieces.push(id);
-                };
-
-                // this is our king
-                if (returnData[i][0] != _col && returnData[i][1] == "K") {
-                    var column = "ABCDEFGH"[i % 8];
-                    var row = Math.floor(i / 8) + 1;
-                    var square = document.getElementById(column + row);
-                    kingPos = square;
-                };
-            };
-
-            if (kingSafetyCallBack(pieces, kingPos)) {
-                makeMove(currentStart.dataset.piece, currentStart.id, currentEnd.id);
-            } else {
-                currentStart.style.opacity = "1";
-            };
-
-
-        }, error: function(resp) {
-            console.log(resp);
-            piecestocheck = [];
-        }});
-    };
-
-    function kingSafety() {
-        piecestocheck.forEach(function(p) {
-            kingCheck = legalCheck(p[0], p[1][0], currentEnd);
-            if (kingCheck === true) {
-                // colours in squares that can attack the king if moved to the given position
-                // p[1].css("background", "red");
-                resolve(false);
-            };
-        });
-        resolve(true);
-    }
 
     function getGameState() {
         var dat = {
@@ -834,6 +691,7 @@ $( document ).ready(function() {
         let boardData = JSON.parse(data["board"]);
         document.moveId = nextPlay[1];
         document.col = nextPlay[0];
+        document.latestBoard = boardData;
 
         if (status.indexOf("has won") > -1) {
             frozen = true;
@@ -844,11 +702,6 @@ $( document ).ready(function() {
             var j = this.dataset.row - 1;
             this.dataset.piece = boardData[(j * 8) + i];
         });
-
-        // if (moves.length > movesLength) {
-        //     getGameState();
-        //     movesLength = moves.length;
-        // };
 
         document.plyCounter = moves.length;
 
@@ -942,16 +795,18 @@ $( document ).ready(function() {
         console.timeEnd("timer");
     };
 
-    let eventSource = new EventSource(`/poll/${document.gameID}/`);
+    let eventSource = new EventSource(`/poll/${document.gameID}/${document.myColour}`);
 
     eventSource.onmessage = (event) => {
-        console.log(event.lastEventId);
+        console.log("got a move");
+        console.log()
         if (document.frozen) {
             console.log("frozen");
             return;
         };
         
         let liveData = JSON.parse(event.data);
+        console.log(liveData.moves[liveData.moves.length - 1]);
         console.log(liveData);
         console.time("timer");
         poll(liveData);
@@ -968,7 +823,7 @@ $( document ).ready(function() {
         }
         eventSource.close();
         setTimeout(() => {
-            eventSource = new EventSource(`/poll/${document.gameID}`);
+            eventSource = new EventSource(`/poll/${document.gameID}/${document.myColour}`);
         }, 5000);
     };
 });

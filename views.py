@@ -121,12 +121,13 @@ def submitMove():
     )
 
     if last_move:
-        colour = [1, 0][last_move.colour]
+        plyid = last_move.plyid + 1
+        colour = 1 - last_move.colour
         move_num = last_move.gamemove + colour
     else:
-        colour = move_num = 1
+        colour = move_num = plyid = 1
 
-    move = MODELS.Move(colour=colour, piece=piece, p_from=move_from, p_to=move_to, gameid=gameid, gamemove=move_num)
+    move = MODELS.Move(colour=colour, piece=piece, p_from=move_from, p_to=move_to, gameid=gameid, gamemove=move_num, plyid=plyid)
     App.db.session.add(move)
     App.db.session.commit()
 
@@ -185,87 +186,80 @@ def submitMove():
     global movesPlayed
     movesPlayed += 1
     return "{\"status\": \"" + game.status + "\"}"
+
+
+def fetchData(gameID):
+    with App.app.app_context():
+        game = (
+            App.db.session.query(MODELS.Game)
+            .filter(MODELS.Game.id==gameID)
+            .first()
+        )
+
+        moves = (
+            App.db.session.query(MODELS.Move)
+            .filter(MODELS.Move.gameid==gameID)
+            .all()
+        )
+
+    if len(moves) > 0:
+        next_plyid = moves[-1].plyid + 1
+        # colours where 1: white & 0: black
+        next_player_colour = 1 - moves[-1].colour
+        # move number
+        next_move = moves[-1].gamemove + next_player_colour
+    else:
+        next_plyid = 1
+        next_player_colour = 1
+        next_move = 1
+
+    data = {
+        "status": game.status,
+        "moves": [
+            {
+                "num": m.gamemove,
+                "col": m.colour,
+                "from": m.p_from,
+                "to": m.p_to,
+                "piece": m.piece
+            } for m in moves
+        ],
+        "next-play": [
+            next_player_colour,
+            next_move
+        ],
+        "taken": game.taken,
+        "board": game.currentboard
+    }
+    
+    encoded = json.dumps(data)
+
+    return f"id: {len(moves)}\ndata: {encoded}\n\n"
     
 
-def pollData(gameID):
+def pollData(gameID, playerColour):
+    yield fetchData(gameID)
+
     global movesPlayed
 
     lastMoves = None
     # last_event_id = int(request.headers.get('Last-Event-ID', 0))
     while True:
-        if movesPlayed != lastMoves:
-            with App.app.app_context():
-                game = (
-                    App.db.session.query(MODELS.Game)
-                    .filter(MODELS.Game.id==gameID)
-                    .first()
-                )
-
-                moves = (
-                    App.db.session.query(MODELS.Move)
-                    .filter(MODELS.Move.gameid==gameID)
-                    .all()
-                )
-
-            if len(moves) > 0:
-                # colours where 1: white & 0: black
-                next_player = [1, 0][moves[-1].colour]
-                # move number
-                next_move = moves[-1].gamemove + next_player
-            else:
-                next_player = 1
-                next_move = 1
-
-            # Only send new events
-            # if moves and moves[-1].gamemove > last_event_id:
-            #     next_player = 1 if moves[-1].colour == 0 else 0
-            #     next_move = moves[-1].gamemove + next_player
-            #     data = {
-            #         "status": game.status,
-            #         "moves": [
-            #             {
-            #                 "num": m.gamemove,
-            #                 "col": m.colour,
-            #                 "from": m.p_from,
-            #                 "to": m.p_to,
-            #                 "piece": m.piece
-            #             } for m in moves
-            #         ],
-            #         "next-play": [next_player, next_move],
-            #         "taken": game.taken,
-            #         "board": game.currentboard
-            #     }
-
-            data = {
-                "status": game.status,
-                "moves": [
-                    {
-                        "num": m.gamemove,
-                        "col": m.colour,
-                        "from": m.p_from,
-                        "to": m.p_to,
-                        "piece": m.piece
-                    } for m in moves
-                ],
-                "next-play": [
-                    next_player,
-                    next_move
-                ],
-                "taken": game.taken,
-                "board": game.currentboard
-            }
-            
-            encoded = json.dumps(data)
-            # yield f"data: " + encoded + "\n\n"
-            yield f"id: {len(moves)}\ndata: {encoded}\n\n"
+        with App.app.app_context():
+            moves = (
+                App.db.session.query(MODELS.Move)
+                .filter(MODELS.Move.gameid==gameID)
+                .all()
+            )
+        if movesPlayed != lastMoves and int(playerColour) != int(moves[-1].colour):
+            yield fetchData(gameID)
             lastMoves = movesPlayed
         sleep(1)
-        print("a")
 
 
-@App.app.route("/poll/<string:gameID>/", methods=["GET", "POST"])
-def poll(gameID):
-    return Response(pollData(gameID), mimetype='text/event-stream')
+@App.app.route("/poll/<string:gameID>/<string:playerColour>", methods=["GET", "POST"])
+def poll(gameID, playerColour):
+    return Response(pollData(gameID, playerColour), mimetype='text/event-stream')
 
 
 # merge the following two functions

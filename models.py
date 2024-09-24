@@ -16,6 +16,7 @@ class Move(App.db.Model):
     # -
     gameid = App.db.Column(App.db.Integer)
     gamemove = App.db.Column(App.db.Integer)
+    plyid = App.db.Column(App.db.Integer)
 
 
 class Game(App.db.Model):
