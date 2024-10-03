@@ -65,6 +65,7 @@ $( document ).ready(function() {
         };
 
         // convert square id's to numerical positions
+        console.log("start: " + _start_id + " end: " + _end_id);
         var startPos = ["ABCDEFGH".indexOf(_start_id.charAt(0)) + 1, parseInt(_start_id.charAt(1))];
         var endPos = ["ABCDEFGH".indexOf(_end_id.charAt(0)) + 1, parseInt(_end_id.charAt(1))];
 
@@ -82,13 +83,16 @@ $( document ).ready(function() {
         // ! switch case
         if (pieceType == "R") {
             // combination of check for movement and if there are pieces in the way, this is only needed for R, B & Q
-            check = (pdCheck(uVector)[0] && blockedCheck(vector, uVector, startPos, endPos));
+            check = (pdCheck(uVector)[0] && pathway_clear_check(vector, startPos));
         } else if (pieceType == "B") {
-            check = (pdCheck(uVector)[1] && blockedCheck(vector, uVector, startPos, endPos));
+            check = (pdCheck(uVector)[1] && pathway_clear_check(vector, startPos));
         } else if (pieceType == "Q") {
             var pd = pdCheck(uVector);
             var movementCheck = (pd[0] || pd[1]);
-            check = (movementCheck && blockedCheck(vector, uVector, startPos, endPos));
+            console.log("movement check: " + movementCheck);
+            let block_check = pathway_clear_check(vector, startPos);
+            console.log("blocked check: " + block_check);
+            check = (movementCheck && block_check);
         } else if (pieceType == "K") {
             check = kingCheck(vector, _start_id, _end_id, col);
         } else if (pieceType == "N") {
@@ -175,7 +179,7 @@ $( document ).ready(function() {
         // t: (corRow + v.x, corCol)
         let kingToCoords = [kingFromCoords[0] + kingVector[0], kingFromCoords[1]];
 
-        if (!blockedCheck(kingVector, kingUVector, kingFromCoords, kingToCoords)) {
+        if (!pathway_clear_check(kingVector, kingFromCoords)) {
             return false;
         };
 
@@ -189,7 +193,7 @@ $( document ).ready(function() {
         // t: (kingFromCoords[0] + direction, kingToCoords[1])
         let rookToCoords = [kingFromCoords[0] + _direction, kingFromCoords[1]];
 
-        if (!blockedCheck(rookVector, rookUVector, rookFromCoords, rookToCoords)) {
+        if (!pathway_clear_check(rookVector, rookFromCoords)) {
             return false;
         };
 
@@ -258,18 +262,32 @@ $( document ).ready(function() {
 
     // function checks if another piece is in the way of the one you are trying to move
     // from and to given as (x, y)
-    function blockedCheck(_vector, _uVec, _start_pos, _end_pos) {
-        let current = _start_pos;
+    // used for queen, rook, bishop
+    function pathway_clear_check(_vector, _start_pos) {
+        let current_pos = _start_pos;
 
         let mag = Math.floor(calcMagnitude(_vector));
+
+        let current_piece;
         for (let i = 0; i < mag - 1; i++) {
-            current = addVec(current, _uVec);
-            // ? get rid of this
-            if (current == _end_pos) {
-                return true;
-            } else if (document.latestBoard[current[1] * 8 + current[0]] != "") {
-                return false;
-            };
+                current_pos = addVec(current_pos, unitise(_vector));
+                
+                // reached end square
+                if (current_pos == addVec(_start_pos, _vector)) {
+                        console.log("reached the end square");
+                        return true;
+                };
+
+                // [y * 8 + x]
+                current_piece = document.latestBoard[(current_pos[1] - 1) * 8 + (current_pos[0] - 1)];
+
+                console.log("i: " + i + ", piece at (" + current_pos[0] + ", " + current_pos[1] + "): " + current_piece);
+                
+                // something in the pathway
+                if (current_piece != "") {
+                        console.log("something in the way");
+                        return false;
+                };
         };
 
         return true;
@@ -487,6 +505,7 @@ $( document ).ready(function() {
             "offset": document.moveOffset
         };
 
+        // no more ajax, read score back instead
         $.ajax({url: "/getPastBoard/", type: "POST", data: data, success: function(stateJsonString) {
             if (0 == document.moveOffset) {
                 document.frozen = false;
@@ -550,10 +569,10 @@ $( document ).ready(function() {
         };
 
         // checks that move is legal
-        let check = legalCheck(startSquarePiece, currentStart, currentEnd, destinationSquarePiece);
+        let check = legalCheck(startSquarePiece, currentStart.id, currentEnd.id, destinationSquarePiece);
         if (check === false) {
             currentStart.style.opacity = "1";
-            alert("not a legal move");
+            alert("legalCheck returned false");
             return false;
         };
 
@@ -575,6 +594,10 @@ $( document ).ready(function() {
                 var column = "ABCDEFGH"[i % 8];
                 var row = Math.floor(i / 8) + 1;
                 var id = column + String(row);
+                // if this square is the square we are moving to, we don't care if it contains an enemy, and we know it doesn't contian our king (next selection)
+                if (id == currentEnd.id) {
+                        continue;
+                }
                 var square = document.getElementById(column + row);
                 // pieces[returnData[i]] = square;
                 // stores DOM elements corresponding to all of the required squares
@@ -592,14 +615,10 @@ $( document ).ready(function() {
             };
         };
 
-        // use the newly updated board so that what we are checking reflects the board with the candidate move made
-
         let kingSafe = true;
 
-        // CHECK IF THIS WORKS
-
         enemyPieces.forEach((sqID) => {
-            let attacking_piece = document.latestBoard["ABCDEFGH".indexOf(sqID.charAt(0)) * 8 + Number(sqID.charAt(1))];
+            let attacking_piece = document.latestBoard["ABCDEFGH".indexOf(sqID.charAt(0)) * 8 + Number(sqID.charAt(1)) - 1];
 
             if (sqID != friendlyKingPos.id) {
                 enemyCanTakeKing = legalCheck(attacking_piece, sqID, friendlyKingPos.id, friendlyKingPos.dataset.piece);
