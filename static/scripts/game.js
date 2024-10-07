@@ -37,7 +37,7 @@ $( document ).ready(function() {
 
     let currentPlyObject = null;
 
-    getGameState();
+//     getGameState();
 
     if (document.game_status == "test") {
         $("#in-progress").css("visibility", "visible");
@@ -214,6 +214,7 @@ $( document ).ready(function() {
             "side": side
         };
 
+        // make this align with the new design elswhere in the code
         $.ajax({url: "/castle/", type: 'POST', data: dat, success: function(result) {
             getGameState();
             console.log(result);
@@ -373,16 +374,21 @@ $( document ).ready(function() {
             let startSquarePiece = currentStart.dataset.piece;
             let destinationSquarePiece = currentEnd.dataset.piece;
             
+            // visually makes move
             currentEnd.dataset.piece = currentStart.dataset.piece;
             currentStart.dataset.piece = "";
+
+            // currentStart.style.opacity = "1";
+
             let valid = validateMove(startSquarePiece, destinationSquarePiece);
             if (!valid) {
+                // return pieces
                 currentStart.dataset.piece = currentEnd.dataset.piece;
                 currentEnd.dataset.piece = "";
                 currentStart.style.opacity = "1";
             } else {
                 makeMove(currentStart.dataset.piece, currentStart.id, currentEnd.id);
-                currentStart.style.opacity = "1";
+                // currentStart.style.opacity = "1";
             };
         } else {
             currentStart.style.opacity = "1";
@@ -432,41 +438,6 @@ $( document ).ready(function() {
         hasMoved = false;
         startObj.css("background", startBack);
         $("#info-window").hide();
-    });
-
-    // changes the layout of the whole board
-    $("#update-board").click(function() {
-        var command = $("#command").val();
-        var dat = {
-            "id": document.gameID,
-            "command": command
-        };
-
-        $.ajax({url: "/boardChange/", type: 'POST', data: dat, success: function() {
-            getGameState();
-        }, error: function(resp) {
-            console.log(resp);
-        }});
-    });
-
-    $("#state-button").click(function() {
-        var dat = {
-            "id": document.gameID,
-            "command": ""
-        };
-
-        if ($(this).val() == "save state") {
-            dat["command"] = "save state";
-        } else {
-            dat["command"] = "load saved state";
-        };
-
-        $.ajax({url: "/saveState/", type: 'POST', data: dat, success: function(result) {
-            $("#state-button").val(result);
-            getGameState();
-        }, error: function(resp) {
-            console.log(resp);
-        }});
     });
 
     $("#resign").click(function() {
@@ -660,6 +631,7 @@ $( document ).ready(function() {
                 $("#not-started").css("visibility", "hidden");
                 $("#won").css("visibility", "visible");
             };
+            currentStart.style.opacity = "1";
             // i dont think this is required because making a move will fire an event which SSE willl tell the client about anyway and then update the board in that
             // getGameState();
             
@@ -816,9 +788,10 @@ $( document ).ready(function() {
 
     let eventSource = new EventSource(`/poll/${document.gameID}/${document.myColour}`);
 
+    // first move boundary condition
+
     eventSource.onmessage = (event) => {
         console.log("got a move");
-        console.log()
         if (document.frozen) {
             console.log("frozen");
             return;

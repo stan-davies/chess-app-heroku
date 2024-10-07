@@ -90,20 +90,20 @@ def game(game_id):
 
     players = [game.p1_name, game.p2_name]
 
-    _u = request.args.get("u")
+    username = request.args.get("u")
     col_words = ["black", "white"]
 
-    if _u == players[0]:
+    if username == players[0]:
         col_ = game.p1_colour
         colour = col_words[col_]
-    elif _u == players[1]:
+    elif username == players[1]:
         col_ = game.p2_colour
         colour = col_words[col_]
     else:
         col_ = 3
         colour = ""
 
-    return render_template("game.html", col=col_, name=_u, colour=colour, status=game.status, board=game.currentboard)
+    return render_template("game.html", col=col_, name=username, colour=colour, status=game.status, board=game.currentboard)
 
 
 @App.app.route("/submitMove/", methods=["POST"])
@@ -251,7 +251,11 @@ def pollData(gameID, playerColour):
                 .filter(MODELS.Move.gameid==gameID)
                 .all()
             )
-        if movesPlayed != lastMoves and int(playerColour) != int(moves[-1].colour):
+
+        # nobody has moved yet / only one move made
+        # moves increased
+        # player colour not the same as the last moves colour
+        if movesPlayed <= 1 or (movesPlayed != lastMoves and int(playerColour) != int(moves[-1].colour)):
             yield fetchData(gameID)
             lastMoves = movesPlayed
         sleep(1)
