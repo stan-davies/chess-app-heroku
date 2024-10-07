@@ -234,7 +234,7 @@ def fetchData(gameID):
     
     encoded = json.dumps(data)
 
-    return f"id: {len(moves)}\ndata: {encoded}\n\n"
+    return f"id: {len(moves)}\n\ndata: {encoded}\n\n"
     
 
 def pollData(gameID, playerColour):
