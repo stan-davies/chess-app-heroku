@@ -1,4 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.sql import func
 import app as App
 
 # !!! in postgres, the names of all tables and columns MUST be in lowercase, if you enter them in uppercase, they will simply be changed, however, if you send it uppercase names using sqlalchemy, it will be sensitive to case, and cause errors, so don't let that happen
@@ -49,3 +50,13 @@ class StateHistory(App.db.Model):
     gamemove = App.db.Column(App.db.Integer)
     colour = App.db.Column(App.db.String(5))
     state = App.db.Column(App.db.String(1024))
+
+
+class Event(App.db.Model):
+    __tablename__ = "events"
+
+    id = App.db.Column(App.db.Integer, primary_key=True)
+    message = App.db.Column(App.db.String(255))
+    data = App.db.Column(App.db.String(255))
+    timestamp = App.db.Column(App.db.DateTime(timezone=True), default=func.now())
+    gameid = App.db.Column(App.db.Integer);
