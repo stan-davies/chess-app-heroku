@@ -4,8 +4,12 @@ from sqlalchemy import desc
 import models as MODELS
 import json
 import app as App
-from time import sleep
+# from time import sleep
 from sys import stdout
+
+import time
+
+
 
 
 movesPlayed = 0
@@ -197,9 +201,6 @@ def submitMove():
                 winner.wins += 1
                 App.db.session.commit()
 
-        #     global movesPlayed
-        #     movesPlayed += 1
-
         # data looks like:
         # status: 'in progress', player: 'w'
         game_data = {"status": game.status, "player": colourString[0]};
@@ -210,7 +211,7 @@ def submitMove():
         return "{\"status\": \"" + game.status + "\"}"
 
 
-def fetchData(gameID):
+def fetch_data(gameID):
         with App.app.app_context():
                 game = (
                         App.db.session.query(MODELS.Game)
@@ -256,7 +257,7 @@ def fetchData(gameID):
         
         encoded = json.dumps(data)
 
-        return f"id: {len(moves)}\n\ndata: {encoded}\n\n"
+        return f"id: {len(moves)}\ndata: {encoded}\n\n"
 
 
 def get_event(gameid):
@@ -273,222 +274,196 @@ def get_event(gameid):
 
     
 
-def pollData(gameid, playerColour):
-        #     yield fetchData(gameID)
-
-        #     global movesPlayed
-
+def send_events(gameid, playerColour):
         last_event = get_event(gameid)
-        yield fetchData(gameid)
+        yield fetch_data(gameid)
 
-        #     lastMoves = 0
-        # last_event_id = int(request.headers.get('Last-Event-ID', 0))
         while True:
                 latest_event = get_event(gameid)
 
                 if (None == last_event):
                         if (None == latest_event):
-                              sleep(5)
+                              time.sleep(10)
                               continue
                         else:
-                             yield fetchData(gameid)
+                             yield fetch_data(gameid)
                              last_event = latest_event 
-                             sleep(1)
+                             time.sleep(1)
                              continue
                              
 
                 if (last_event.id == latest_event.id):
-                       sleep(1)
+                       time.sleep(1)
                        continue
-
-                # send the status only
+                
+                # change to return status only
                 if ("join" == latest_event.message):
-                        yield fetchData(gameid)
+                        yield fetch_data(gameid)
                         last_event = latest_event
-                # send everything
+                # continue to send everything
                 elif ("move" == latest_event.message and json.loads(latest_event.data)["player"] != playerColour):
-                        yield fetchData(gameid)
+                        yield fetch_data(gameid)
                         last_event = latest_event
 
-                sleep(1)
-                
+                time.sleep(1)
 
-                # with App.app.app_context():
-                #     moves = (
-                #         App.db.session.query(MODELS.Move)
-                #         .filter(MODELS.Move.gameid==gameID)
-                #         .all()
-                #     )
-
-                # # nobody has moved yet / only one move made
-                # # moves increased
-                # # player colour not the same as the last moves colour
-                # moves_from_db = len(moves)
-
-                # print(f"{moves_from_db = }", file=stdout)
-                # print(f"{lastMoves = }", file=stdout)
-                
-                # if (lastMoves < moves_from_db and int(playerColour) != int(moves[-1].colour)):
-                #     yield fetchData(gameID)
-                #     lastMoves = moves_from_db
-                # sleep(1)
 
 
 @App.app.route("/poll/<string:gameid>/<string:playerColour>", methods=["GET", "POST"])
 def poll(gameid, playerColour):
-        return Response(pollData(gameid, playerColour), mimetype='text/event-stream')
+        return Response(send_events(gameid, playerColour), mimetype='text/event-stream')
 
 
 # merge the following two functions
 @App.app.route("/getCurrentBoard/", methods=["POST"])
 def getCurrentBoard():
-    game_id = request.form["gameID"]
+        game_id = request.form["gameID"]
 
-    game = (
-        App.db.session.query(MODELS.Game)
-        .filter(MODELS.Game.id==game_id)
-        .first()
-    )
+        game = (
+                App.db.session.query(MODELS.Game)
+                .filter(MODELS.Game.id==game_id)
+                .first()
+        )
 
-    board = game.currentboard
+        board = game.currentboard
 
-    data = json.dumps(board)
+        data = json.dumps(board)
 
-    return data
+        return data
 
 
 @App.app.route("/getPastBoard/", methods=["POST"])
 def getPastBoard():
-    gameid = request.form["gameID"]
-    offset = int(request.form["offset"])
+        gameid = request.form["gameID"]
+        offset = int(request.form["offset"])
 
-    # if offset is the length of the gamemoves then return a default board
-    # and don't store anything in db
+        # if offset is the length of the gamemoves then return a default board
+        # and don't store anything in db
 
-    game_states = (
-        App.db.session.query(MODELS.StateHistory)
-        .filter(MODELS.StateHistory.gameid==gameid)
-        .order_by(MODELS.StateHistory.gamemove)
-        .all()
-    )
+        game_states = (
+                App.db.session.query(MODELS.StateHistory)
+                .filter(MODELS.StateHistory.gameid==gameid)
+                .order_by(MODELS.StateHistory.gamemove)
+                .all()
+        )
 
-    if len(game_states) < offset:
-        offset = 0
+        if len(game_states) < offset:
+                offset = 0
 
-    state_row = game_states[len(game_states) - (offset + 1)]
+        state_row = game_states[len(game_states) - (offset + 1)]
 
-    return state_row.state;
+        return state_row.state
 
 
 @App.app.route("/castle/", methods=["POST"])
 def castle():
-    gameid = request.form["game-id"]
-    colour = request.form["colour"]
-    side = request.form["side"]
+        gameid = request.form["game-id"]
+        colour = request.form["colour"]
+        side = request.form["side"]
 
-    game = (
-        App.db.session.query(MODELS.Game)
-        .filter(MODELS.Game.id==gameid)
-        .first()
-    )
+        game = (
+                App.db.session.query(MODELS.Game)
+                .filter(MODELS.Game.id==gameid)
+                .first()
+        )
 
-    gameboard = json.loads(game.currentboard)
+        gameboard = json.loads(game.currentboard)
 
-    if colour == "w" and side == "kingside":
-        gameboard[7] = ""
-        gameboard[5] = "wR"
-        gameboard[4] = ""
-        gameboard[6] = "wK"
+        if colour == "w" and side == "kingside":
+                gameboard[7] = ""
+                gameboard[5] = "wR"
+                gameboard[4] = ""
+                gameboard[6] = "wK"
 
-        move_from = "e1"
-        move_to = "g1"
-    elif colour == "w" and side == "queenside":
-        gameboard[0] = ""
-        gameboard[3] = "wR"
-        gameboard[4] = ""
-        gameboard[2] = "wK"
+                move_from = "e1"
+                move_to = "g1"
+        elif colour == "w" and side == "queenside":
+                gameboard[0] = ""
+                gameboard[3] = "wR"
+                gameboard[4] = ""
+                gameboard[2] = "wK"
 
-        move_from = "e1"
-        move_to = "c1"
-    elif colour == "b" and side == "kingside":
-        gameboard[63] = ""
-        gameboard[61] = "bR"
-        gameboard[60] = ""
-        gameboard[62] = "bK"
+                move_from = "e1"
+                move_to = "c1"
+        elif colour == "b" and side == "kingside":
+                gameboard[63] = ""
+                gameboard[61] = "bR"
+                gameboard[60] = ""
+                gameboard[62] = "bK"
 
-        move_from = "e8"
-        move_to = "g8"
-    elif colour == "b" and side == "queenside":
-        gameboard[56] = ""
-        gameboard[59] = "bR"
-        gameboard[60] = ""
-        gameboard[58] = "bK"
+                move_from = "e8"
+                move_to = "g8"
+        elif colour == "b" and side == "queenside":
+                gameboard[56] = ""
+                gameboard[59] = "bR"
+                gameboard[60] = ""
+                gameboard[58] = "bK"
 
-        move_from = "e8"
-        move_to = "c8"
-
-
-    jsonBoard = json.dumps(gameboard)
-    game.currentboard = jsonBoard
-    App.db.session.commit()
-
-    last_move = (
-        App.db.session.query(MODELS.Move)
-        .filter(MODELS.Move.gameid==gameid)
-        .order_by(-MODELS.Move.id)
-        .first()
-    )
-
-    if last_move:
-        col = [1, 0][last_move.colour]
-        move_num = last_move.gamemove + col   # col = 1 for white and 0 for black
-    else:
-        col = move_num = 1
+                move_from = "e8"
+                move_to = "c8"
 
 
-    move = MODELS.Move(colour=col, piece=f"{side[0]}K", p_from=move_from, p_to=move_to, gameid=gameid, gamemove=move_num)
-    App.db.session.add(move)
-    App.db.session.commit()
+        jsonBoard = json.dumps(gameboard)
+        game.currentboard = jsonBoard
+        App.db.session.commit()
+
+        last_move = (
+                App.db.session.query(MODELS.Move)
+                .filter(MODELS.Move.gameid==gameid)
+                .order_by(-MODELS.Move.id)
+                .first()
+        )
+
+        if last_move:
+                col = [1, 0][last_move.colour]
+                move_num = last_move.gamemove + col   # col = 1 for white and 0 for black
+        else:
+                col = move_num = 1
 
 
-    if 1 == colour:
-        colourString = "white"
-    else:
-        colourString = "black"
+        move = MODELS.Move(colour=col, piece=f"{side[0]}K", p_from=move_from, p_to=move_to, gameid=gameid, gamemove=move_num)
+        App.db.session.add(move)
+        App.db.session.commit()
 
-    currentState = MODELS.StateHistory(gameid=gameid, gamemove=move_num, colour=colourString, state=jsonBoard)
-    App.db.session.add(currentState)
-    App.db.session.commit()
 
-    # lol i forgot about this
-    return "okay"
+        if 1 == colour:
+                colourString = "white"
+        else:
+                colourString = "black"
+
+        currentState = MODELS.StateHistory(gameid=gameid, gamemove=move_num, colour=colourString, state=jsonBoard)
+        App.db.session.add(currentState)
+        App.db.session.commit()
+
+        # lol i forgot about this
+        return "okay"
 
 
 @App.app.route("/add_account/", methods=["POST"])
 def add_account():
-    new_account_name = request.form["account-name"]
+        new_account_name = request.form["account-name"]
 
-    new_account = MODELS.Player(name=new_account_name)
-    App.db.session.add(new_account)
-    App.db.session.commit()
+        new_account = MODELS.Player(name=new_account_name)
+        App.db.session.add(new_account)
+        App.db.session.commit()
 
-    return redirect(url_for("index"))
+        return redirect(url_for("index"))
 
 
 @App.app.route("/resign/", methods=["POST"])
 def resign():
-    gameid = request.form["id"]
-    losing_colour = int(request.form["col"])
+        gameid = request.form["id"]
+        losing_colour = int(request.form["col"])
 
-    winner = ["black", "white"][losing_colour]
+        winner = ["black", "white"][losing_colour]
 
-    game = (
-        App.db.session.query(MODELS.Game)
-        .filter(MODELS.Game.id==gameid)
-        .first()
-    )
+        game = (
+                App.db.session.query(MODELS.Game)
+                .filter(MODELS.Game.id==gameid)
+                .first()
+        )
 
-    game.status = f"{winner} has won"
-    App.db.session.commit()
+        game.status = f"{winner} has won"
+        App.db.session.commit()
 
-    return game.status
+        return game.status

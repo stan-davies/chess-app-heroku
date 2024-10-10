@@ -3,3 +3,6 @@ __pycache__
 Lib
 Scripts
 Include
+output_file.sql
+pyenv.cfg
+latest.dump
